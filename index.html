@@ -1,280 +1,585 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Contenido por Marca</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; color: #1f2937; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
-        .header { background: white; padding: 2rem; text-align: center; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .header h1 { margin-bottom: 0.5rem; font-size: 28px; }
-        .header p { color: #666; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
-        input, textarea, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 14px; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        button { width: 100%; padding: 10px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 14px; }
-        button:hover { background: #2563eb; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .brand-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
-        .brand-item:hover { background: #f3f4f6; }
-        .brand-item.selected { background: #dbeafe; border-color: #3b82f6; }
-        .brand-item-content { flex: 1; }
-        .brand-name { font-weight: 500; font-size: 14px; }
-        .brand-date { font-size: 12px; color: #999; margin-top: 2px; }
-        .brand-delete { background: none; border: none; color: #999; cursor: pointer; padding: 4px 8px; font-size: 16px; }
-        .result { background: white; border: 1px solid #10b981; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .result h3 { color: #10b981; margin-bottom: 1rem; margin-top: 0; }
-        .result-content { background: #f9fafb; padding: 1rem; border-radius: 4px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.6; }
-        .result-buttons { display: flex; gap: 8px; margin-bottom: 1rem; }
-        .result-buttons button { width: auto; flex: 1; }
-        .label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
-        .info { font-size: 13px; color: #999; margin-bottom: 1rem; }
-        .setup-box { background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
-        .setup-box p { color: #1e40af; font-weight: 500; margin-bottom: 12px; }
-        .setup-box a { color: #3b82f6; text-decoration: none; }
-        .setup-box a:hover { text-decoration: underline; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Contenido por Marca</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .header {
+      background: white;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .header h1 {
+      margin-bottom: 0.5rem;
+      font-size: 28px;
+    }
+
+    .header p {
+      color: #666;
+    }
+
+    .setup-box {
+      background: #eff6ff;
+      border: 1px solid #3b82f6;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .setup-box p {
+      color: #1e40af;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .setup-box a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .setup-box a:hover {
+      text-decoration: underline;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 11px;
+      margin-bottom: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      background: white;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      padding: 11px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .info {
+      font-size: 13px;
+      color: #6b7280;
+      margin: 1rem 0;
+    }
+
+    .brand-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .brand-item:hover {
+      background: #f3f4f6;
+    }
+
+    .brand-item.selected {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+
+    .brand-item-content {
+      flex: 1;
+    }
+
+    .brand-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .brand-date {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .brand-delete {
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 16px;
+      width: auto;
+    }
+
+    .brand-delete:hover {
+      background: transparent;
+      color: #ef4444;
+    }
+
+    .result {
+      background: white;
+      border: 1px solid #10b981;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .result h3 {
+      color: #10b981;
+      margin-bottom: 1rem;
+    }
+
+    .result-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .result-buttons button {
+      flex: 1;
+      width: auto;
+    }
+
+    .result-content {
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 6px;
+      max-height: 500px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      border: 1px solid #e5e7eb;
+    }
+
+    .small-warning {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: -4px;
+      margin-bottom: 12px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎨 Generador de Contenido por Marca</h1>
-            <p>Sube manuales de marca y genera contenido respetando su identidad</p>
-        </div>
+  <div class="container">
 
-        <div id="setupBox" class="setup-box" style="display: none;">
-            <p>⚠️ Necesitas tu API Key de Google Gemini</p>
-            <input type="password" id="apiKey" placeholder="AIza...">
-            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Obtén tu API Key en: <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com/app/apikey</a></p>
-            <button onclick="saveApiKey()">Guardar API Key</button>
-        </div>
-
-        <div class="grid">
-            <div class="card">
-                <h3>📚 Mis manuales</h3>
-                
-                <input type="text" id="brandName" placeholder="Nombre de la marca (Nike, Coca, etc.)">
-                <input type="file" id="brandFile" accept=".txt,.pdf">
-                <button onclick="uploadBrand()">➕ Subir manual</button>
-
-                <div class="info" id="brandCount">👆 Sube tu primer manual</div>
-                <div id="brandsList"></div>
-            </div>
-
-            <div class="card">
-                <h3>✨ Genera contenido</h3>
-                
-                <label class="label">¿Qué necesitas?</label>
-                <textarea id="prompt" placeholder="Ej: Crea un post para Instagram que anuncie nuestro nuevo producto" style="min-height: 80px;"></textarea>
-
-                <label class="label">Tipo de contenido</label>
-                <select id="contentType">
-                    <option value="instagram-post">Post de Instagram</option>
-                    <option value="facebook-ad">Anuncio Facebook</option>
-                    <option value="email">Email marketing</option>
-                    <option value="product-description">Descripción de producto</option>
-                    <option value="blog-post">Artículo blog</option>
-                    <option value="tiktok">Video TikTok</option>
-                </select>
-
-                <button id="generateBtn" onclick="generateContent()" disabled>✨ Generar contenido</button>
-            </div>
-        </div>
-
-        <div id="resultDiv" style="display: none;">
-            <div class="result">
-                <h3>✅ Contenido generado</h3>
-                <div class="result-buttons">
-                    <button onclick="copyResult()">📋 Copiar</button>
-                    <button onclick="downloadResult()">📥 Descargar</button>
-                </div>
-                <div class="result-content" id="resultContent"></div>
-            </div>
-        </div>
+    <div class="header">
+      <h1>🎨 Generador de Contenido por Marca</h1>
+      <p>Subí manuales de marca y generá contenido respetando su identidad</p>
     </div>
 
-    <script>
-        let brands = JSON.parse(localStorage.getItem('brands')) || [];
-        let selectedBrand = null;
-        let lastResult = '';
+    <div id="setupBox" class="setup-box" style="display: none;">
+      <p>⚠️ Necesitás tu API Key de Google Gemini</p>
+      <input type="password" id="apiKey" placeholder="Pegá tu API Key: AIza..." />
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        Podés obtenerla en:
+        <a href="https://aistudio.google.com/app/apikey" target="_blank">
+          aistudio.google.com/app/apikey
+        </a>
+      </p>
+      <button onclick="saveApiKey()">Guardar API Key</button>
+    </div>
 
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', () => {
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                document.getElementById('setupBox').style.display = 'block';
-            }
-            renderBrands();
-        });
+    <div class="grid">
 
-        function saveApiKey() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            if (!apiKey) {
-                alert('Pega tu API Key');
-                return;
-            }
-            localStorage.setItem('geminiApiKey', apiKey);
-            document.getElementById('setupBox').style.display = 'none';
-            alert('✅ API Key guardada');
-        }
+      <div class="card">
+        <h3>📚 Mis manuales</h3>
 
-        function uploadBrand() {
-            const name = document.getElementById('brandName').value.trim();
-            const file = document.getElementById('brandFile').files[0];
-            
-            if (!name || !file) {
-                alert('Escribe el nombre y selecciona un archivo');
-                return;
-            }
+        <input type="text" id="brandName" placeholder="Nombre de la marca" />
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const brand = {
-                    id: Date.now(),
-                    name,
-                    content: e.target.result,
-                    date: new Date().toLocaleDateString()
-                };
-                brands.push(brand);
-                localStorage.setItem('brands', JSON.stringify(brands));
-                document.getElementById('brandName').value = '';
-                document.getElementById('brandFile').value = '';
-                selectedBrand = brand.id;
-                renderBrands();
-                alert(`✅ Manual "${name}" subido`);
-            };
-            reader.readAsText(file);
-        }
+        <input type="file" id="brandFile" accept=".txt" />
+        <div class="small-warning">
+          Por ahora subí solo archivos .txt. Después sumamos PDF real.
+        </div>
 
-        function deleteBrand(id) {
-            if (confirm('¿Eliminar este manual?')) {
-                brands = brands.filter(b => b.id !== id);
-                localStorage.setItem('brands', JSON.stringify(brands));
-                if (selectedBrand === id) selectedBrand = null;
-                renderBrands();
-            }
-        }
+        <button onclick="uploadBrand()">➕ Subir manual</button>
 
-        function renderBrands() {
-            const list = document.getElementById('brandsList');
-            list.innerHTML = '';
-            
-            document.getElementById('brandCount').textContent = 
-                brands.length === 0 ? '👆 Sube tu primer manual' : `${brands.length} manual${brands.length !== 1 ? 'es' : ''}`;
-            
-            brands.forEach(brand => {
-                const div = document.createElement('div');
-                div.className = 'brand-item' + (selectedBrand === brand.id ? ' selected' : '');
-                div.onclick = () => { selectedBrand = brand.id; renderBrands(); };
-                div.innerHTML = `
-                    <div class="brand-item-content">
-                        <div class="brand-name">${brand.name}</div>
-                        <div class="brand-date">${brand.date}</div>
-                    </div>
-                    <button class="brand-delete" onclick="event.stopPropagation(); deleteBrand(${brand.id})">🗑️</button>
-                `;
-                list.appendChild(div);
-            });
+        <div class="info" id="brandCount">👆 Subí tu primer manual</div>
+        <div id="brandsList"></div>
+      </div>
 
-            document.getElementById('generateBtn').disabled = !selectedBrand;
-        }
+      <div class="card">
+        <h3>✨ Generar contenido</h3>
 
-        async function generateContent() {
-            if (!selectedBrand) {
-                alert('Selecciona una marca');
-                return;
-            }
+        <label class="label">¿Qué necesitás?</label>
+        <textarea
+          id="prompt"
+          placeholder="Ej: Creá un post para Instagram anunciando nuestro nuevo servicio"
+          style="min-height: 90px;"
+        ></textarea>
 
-            const prompt = document.getElementById('prompt').value.trim();
-            const contentType = document.getElementById('contentType').value;
-            const apiKey = localStorage.getItem('geminiApiKey');
+        <label class="label">Tipo de contenido</label>
+        <select id="contentType">
+          <option value="instagram-post">Post de Instagram</option>
+          <option value="instagram-story">Historia de Instagram</option>
+          <option value="carousel">Carrusel de Instagram</option>
+          <option value="facebook-ad">Anuncio Facebook / Meta Ads</option>
+          <option value="email">Email marketing</option>
+          <option value="product-description">Descripción de producto</option>
+          <option value="blog-post">Artículo de blog</option>
+          <option value="tiktok">Guion para TikTok / Reel</option>
+        </select>
 
-            if (!prompt) {
-                alert('Escribe lo que necesitas');
-                return;
-            }
+        <button id="generateBtn" onclick="generateContent()" disabled>
+          ✨ Generar contenido
+        </button>
+      </div>
 
-            if (!apiKey) {
-                alert('Configura tu API Key primero');
-                return;
-            }
+    </div>
 
-            const brand = brands.find(b => b.id === selectedBrand);
-            
-            document.getElementById('generateBtn').disabled = true;
-            document.getElementById('generateBtn').textContent = '⏳ Generando...';
+    <div id="resultDiv" style="display: none;">
+      <div class="result">
+        <h3>✅ Contenido generado</h3>
 
-            try {
-                const systemPrompt = `Eres un experto en branding y content creation. 
-Tienes el siguiente manual de marca:
+        <div class="result-buttons">
+          <button onclick="copyResult()">📋 Copiar</button>
+          <button onclick="downloadResult()">📥 Descargar</button>
+        </div>
+
+        <div class="result-content" id="resultContent"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let brands = JSON.parse(localStorage.getItem("brands")) || [];
+    let selectedBrand = null;
+    let lastResult = "";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const apiKey = localStorage.getItem("geminiApiKey");
+
+      if (!apiKey) {
+        document.getElementById("setupBox").style.display = "block";
+      }
+
+      renderBrands();
+    });
+
+    function saveApiKey() {
+      const apiKey = document.getElementById("apiKey").value.trim();
+
+      if (!apiKey) {
+        alert("Pegá tu API Key primero");
+        return;
+      }
+
+      localStorage.setItem("geminiApiKey", apiKey);
+      document.getElementById("setupBox").style.display = "none";
+      alert("✅ API Key guardada");
+    }
+
+    function uploadBrand() {
+      const name = document.getElementById("brandName").value.trim();
+      const file = document.getElementById("brandFile").files[0];
+
+      if (!name || !file) {
+        alert("Escribí el nombre de la marca y seleccioná un archivo .txt");
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith(".txt")) {
+        alert("Por ahora solo se permiten archivos .txt");
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const brand = {
+          id: Date.now(),
+          name: name,
+          content: e.target.result,
+          date: new Date().toLocaleDateString()
+        };
+
+        brands.push(brand);
+        localStorage.setItem("brands", JSON.stringify(brands));
+
+        document.getElementById("brandName").value = "";
+        document.getElementById("brandFile").value = "";
+
+        selectedBrand = brand.id;
+        renderBrands();
+
+        alert(`✅ Manual "${name}" subido`);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function deleteBrand(id) {
+      if (!confirm("¿Eliminar este manual?")) return;
+
+      brands = brands.filter((brand) => brand.id !== id);
+      localStorage.setItem("brands", JSON.stringify(brands));
+
+      if (selectedBrand === id) {
+        selectedBrand = null;
+      }
+
+      renderBrands();
+    }
+
+    function renderBrands() {
+      const list = document.getElementById("brandsList");
+      list.innerHTML = "";
+
+      document.getElementById("brandCount").textContent =
+        brands.length === 0
+          ? "👆 Subí tu primer manual"
+          : `${brands.length} manual${brands.length !== 1 ? "es" : ""}`;
+
+      brands.forEach((brand) => {
+        const div = document.createElement("div");
+        div.className = "brand-item" + (selectedBrand === brand.id ? " selected" : "");
+
+        div.onclick = () => {
+          selectedBrand = brand.id;
+          renderBrands();
+        };
+
+        div.innerHTML = `
+          <div class="brand-item-content">
+            <div class="brand-name">${brand.name}</div>
+            <div class="brand-date">${brand.date}</div>
+          </div>
+          <button class="brand-delete" onclick="event.stopPropagation(); deleteBrand(${brand.id})">🗑️</button>
+        `;
+
+        list.appendChild(div);
+      });
+
+      document.getElementById("generateBtn").disabled = !selectedBrand;
+    }
+
+    async function generateContent() {
+      if (!selectedBrand) {
+        alert("Seleccioná una marca primero");
+        return;
+      }
+
+      const userPrompt = document.getElementById("prompt").value.trim();
+      const contentType = document.getElementById("contentType").value;
+      const apiKey = localStorage.getItem("geminiApiKey");
+
+      if (!userPrompt) {
+        alert("Escribí qué contenido necesitás");
+        return;
+      }
+
+      if (!apiKey) {
+        alert("Configurá tu API Key primero");
+        document.getElementById("setupBox").style.display = "block";
+        return;
+      }
+
+      const brand = brands.find((b) => b.id === selectedBrand);
+
+      if (!brand) {
+        alert("No se encontró la marca seleccionada");
+        return;
+      }
+
+      const generateBtn = document.getElementById("generateBtn");
+      generateBtn.disabled = true;
+      generateBtn.textContent = "⏳ Generando...";
+
+      try {
+        const systemPrompt = `
+Actuá como director creativo, estratega de contenido y especialista en branding.
+
+A continuación tenés el manual o resumen de identidad de marca:
 
 ${brand.content}
 
-Usa este manual para crear contenido que respete completamente:
-- Colores y paleta
-- Tipografía 
-- Tono de voz
-- Valores y personalidad
+Tu tarea es generar contenido respetando estrictamente:
+- Personalidad de marca
+- Tono de comunicación
+- Paleta de colores
 - Estilo visual
+- Valores de la marca
+- Público objetivo
+- Reglas o restricciones del manual
 
-El tipo de contenido es: ${contentType.replace(/-/g, ' ')}
+Tipo de contenido solicitado:
+${contentType.replace(/-/g, " ")}
 
-Crea contenido profesional que sea consistente con la marca.`;
+Pedido específico del usuario:
+${userPrompt}
 
-                                const response = await fetch('/api/gemini', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        prompt: systemPrompt + "\n\n" + prompt,
-                        apiKey: apiKey
-                    })
-                });
+Respondé en español.
+Dá una pieza lista para usar.
+Si corresponde, incluí:
+- Texto principal
+- Caption
+- Idea visual
+- CTA
+- Hashtags
+- Recomendaciones de diseño
 
-                if (!response.ok) {
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
-                }
+No inventes elementos que contradigan el manual de marca.
+`;
 
-                const data = await response.json();
-                
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
-                    throw new Error('Respuesta inválida de Gemini');
-                }
+        const response = await fetch("/api/gemini", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            prompt: systemPrompt,
+            apiKey: apiKey
+          })
+        });
 
-                const result = data.candidates[0].content.parts[0].text;
-                
-                lastResult = result;
-                document.getElementById('resultContent').textContent = result;
-                document.getElementById('resultDiv').style.display = 'block';
-                window.scrollTo(0, document.getElementById('resultDiv').offsetTop - 100);
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            } finally {
-                document.getElementById('generateBtn').disabled = false;
-                document.getElementById('generateBtn').textContent = '✨ Generar contenido';
-            }
+        const data = await response.json();
+
+        if (data.error) {
+          console.log("Error completo:", data);
+          throw new Error(data.error);
         }
 
-        function copyResult() {
-            navigator.clipboard.writeText(lastResult);
-            alert('✅ Copiado al portapapeles');
+        if (!data.text) {
+          console.log("Respuesta completa:", data);
+          throw new Error("La API respondió, pero no devolvió texto");
         }
 
-        function downloadResult() {
-            const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(lastResult));
-            element.setAttribute('download', 'contenido.txt');
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        }
-    </script>
+        const result = data.text;
+
+        lastResult = result;
+
+        document.getElementById("resultContent").textContent = result;
+        document.getElementById("resultDiv").style.display = "block";
+
+        window.scrollTo({
+          top: document.getElementById("resultDiv").offsetTop - 100,
+          behavior: "smooth"
+        });
+
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = "✨ Generar contenido";
+      }
+    }
+
+    function copyResult() {
+      if (!lastResult) {
+        alert("Todavía no hay contenido para copiar");
+        return;
+      }
+
+      navigator.clipboard.writeText(lastResult);
+      alert("✅ Copiado al portapapeles");
+    }
+
+    function downloadResult() {
+      if (!lastResult) {
+        alert("Todavía no hay contenido para descargar");
+        return;
+      }
+
+      const element = document.createElement("a");
+      const file = new Blob([lastResult], { type: "text/plain" });
+
+      element.href = URL.createObjectURL(file);
+      element.download = "contenido-generado.txt";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  </script>
 </body>
 </html>
