@@ -36,128 +36,65 @@ export default async function handler(req, res) {
   }
 
   try {
-    const conversationText = messages
+    const lastMessages = messages.slice(-6);
+
+    const conversationText = lastMessages
       .map((msg) => {
         const role = msg.role === "assistant" ? "IA" : "Usuario";
-        return `${role}: ${msg.content}`;
+        return `${role}: ${trimText(msg.content, 900)}`;
       })
       .join("\n\n");
 
+    const compactProfile = trimText(currentProfile || "", 4500);
+
     const prompt = `
-Actuá como estratega de marca, director creativo, consultor de branding y asistente de producción visual.
+Actuá como estratega de marca y director creativo.
 
-Estás ayudando al usuario a construir un perfil de marca completo y, además, a detectar qué archivos visuales necesita subir para que luego otra IA pueda generar imágenes publicitarias, posts, stories, banners y piezas visuales de buena calidad.
+Tu trabajo es ayudar al usuario a construir un perfil de marca y detectar qué información o fotos hacen falta para generar una imagen publicitaria.
 
-Nombre de la marca:
+Marca:
 ${brandName}
 
-Perfil de marca actual:
-${currentProfile || "Todavía no hay perfil de marca definido."}
+Perfil actual de marca resumido:
+${compactProfile || "Todavía no hay perfil de marca definido."}
 
-Conversación hasta ahora:
+Última conversación:
 ${conversationText}
 
-Tu tarea tiene 4 partes:
+Reglas:
+- Respondé en español.
+- Sé claro, práctico y breve.
+- No pidas todo a la vez.
+- Hacé una sola pregunta principal por mensaje.
+- Si es un producto, pedí foto del producto.
+- Si es un servicio, preguntá si tiene un entregable visual: web, app, diseño, resultado, espacio, captura o antes/después.
+- Si es campaña, preguntá objetivo, público y mensaje principal.
+- Si es marca institucional, preguntá sensación a transmitir y pedí logo/manual si falta.
+- No inventes datos.
+- Conservá lo importante del perfil anterior.
+- Si ya hay suficiente información, readyToGenerate puede ser true.
 
-1. Responderle al usuario de manera útil, natural y concreta.
-2. Actualizar el perfil de marca acumulado con toda la información nueva.
-3. Detectar qué tipo de pieza, marca, producto o servicio está queriendo trabajar.
-4. Pedir las fotos, capturas o referencias visuales necesarias, dependiendo del caso.
-
-REGLAS IMPORTANTES DE DIAGNÓSTICO:
-
-Si el usuario habla de un PRODUCTO:
-- Pedile foto del producto.
-- Si aplica, pedile foto del packaging.
-- Preguntá si quiere mostrar el producto solo, en uso, en contexto o con personas.
-- Si vende indumentaria, accesorios, comida, bebida, cosmética, tecnología, objetos físicos o similares, siempre conviene pedir foto del producto.
-- Si el producto tiene variantes, preguntá cuál quiere mostrar primero.
-
-Si el usuario habla de un SERVICIO:
-- Primero preguntá si el servicio entrega algún elemento físico, visual o tangible.
-- Ejemplos de entregables visuales:
-  - una web
-  - una app
-  - una tienda online
-  - una pieza gráfica
-  - una prenda
-  - una tarjeta
-  - un espacio físico
-  - una instalación
-  - un antes y después
-  - una persona usando el servicio
-  - una captura de pantalla
-  - un resultado visible
-- Si el servicio tiene entregable visual, pedí foto, captura o referencia de ese entregable.
-- Si el servicio no tiene entregable visual, pedí referencias de escena, público, estilo visual, contexto o situación que represente el servicio.
-
-Si el usuario habla de una MARCA INSTITUCIONAL:
-- Pedí logo o referencia visual si no fue cargado.
-- Pedí manual de marca si existe.
-- Pedí ejemplos visuales anteriores si tiene.
-- Preguntá qué sensación debe transmitir la marca.
-
-Si el usuario habla de una CAMPAÑA:
-- Preguntá objetivo de campaña.
-- Preguntá público.
-- Preguntá oferta o mensaje principal.
-- Preguntá si hay producto, persona, espacio o recurso visual que deba aparecer.
-
-Si el usuario habla de un EVENTO:
-- Pedí fecha, lugar, estilo del evento y público.
-- Preguntá si hay fotos del lugar, speakers, artistas, productos o experiencias.
-- Si hay flyer anterior, pedí referencia.
-
-Muy importante:
-- No pidas todas las cosas a la vez.
-- Hacé una pregunta principal por mensaje.
-- Si falta una foto fundamental, pedila claramente.
-- No inventes información.
-- Si algo no está definido, dejalo como "no especificado".
-- Si el usuario corrige algo, actualizá el perfil.
-- Si el usuario agrega un dato nuevo, incorporalo.
-- No borres información útil del perfil anterior.
-- Respondé siempre en español.
-- Sé claro, práctico y orientado a producción visual.
-
-CRITERIO PARA readyToGenerate:
-- true si ya hay suficiente información para generar una imagen coherente.
-- false si todavía falta información clave.
-
-En general, NO debería estar listo para generar si:
-- Es un producto y todavía no hay foto/referencia del producto.
-- Es un servicio con entregable visual y todavía no hay foto/captura/referencia del entregable.
-- No hay estilo visual definido.
-- No hay público objetivo.
-- No hay objetivo de la pieza.
-
-Puede estar listo para generar si:
-- Es una pieza conceptual o institucional y ya hay marca, tono, estilo visual, colores y objetivo.
-- Es un servicio intangible y ya hay suficiente escena/contexto para representarlo.
-- Es una pieza de campaña con mensaje, público, estilo y objetivo claros.
-
-Devolvé ÚNICAMENTE un JSON válido con esta estructura exacta:
+Devolvé únicamente JSON válido con esta estructura:
 
 {
-  "reply": "respuesta conversacional para el usuario",
-  "updatedProfile": "perfil de marca completo y actualizado",
+  "reply": "respuesta conversacional breve para el usuario",
+  "updatedProfile": "perfil de marca actualizado y resumido",
   "detectedType": "producto | servicio | marca institucional | campaña | evento | otro | no especificado",
   "needsVisualAssets": true,
   "assetRequests": [
     {
       "type": "product_photo | packaging_photo | logo | screenshot | service_result | place_photo | person_photo | reference_image | other",
-      "label": "nombre claro del archivo que debería subir",
-      "reason": "por qué se necesita esa imagen"
+      "label": "archivo que debería subir",
+      "reason": "por qué se necesita"
     }
   ],
   "missingInfo": ["dato faltante 1", "dato faltante 2"],
-  "nextQuestion": "pregunta concreta que conviene hacer ahora",
+  "nextQuestion": "una sola pregunta concreta para avanzar",
   "readyToGenerate": false
 }
 
-No agregues markdown.
-No agregues explicación fuera del JSON.
-No uses bloque de código.
+No uses markdown.
+No agregues texto fuera del JSON.
 `;
 
     let rawText = "";
@@ -209,9 +146,14 @@ No uses bloque de código.
       });
     }
 
+    const updatedProfile = trimText(
+      parsed.updatedProfile || currentProfile || "",
+      5500
+    );
+
     return res.status(200).json({
       reply: parsed.reply || "Perfecto, seguí contándome más sobre la marca.",
-      updatedProfile: parsed.updatedProfile || currentProfile || "",
+      updatedProfile,
       detectedType: parsed.detectedType || "no especificado",
       needsVisualAssets: Boolean(parsed.needsVisualAssets),
       assetRequests: Array.isArray(parsed.assetRequests) ? parsed.assetRequests : [],
@@ -227,6 +169,16 @@ No uses bloque de código.
       error: error.message
     });
   }
+}
+
+function trimText(text, maxLength) {
+  const value = String(text || "");
+
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return value.slice(0, maxLength) + "\n\n[Contenido resumido por límite de tokens]";
 }
 
 async function callGeminiText({ apiKey, model, prompt }) {
@@ -280,6 +232,7 @@ async function callGroqText({ apiKey, model, prompt }) {
         }
       ],
       temperature: 0.4,
+      max_tokens: 900,
       response_format: {
         type: "json_object"
       }
