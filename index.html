@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generador de Contenido por Marca</title>
+  <title>Generador de Imagen por Marca</title>
 
   <style>
     * {
@@ -152,6 +152,13 @@
       margin: 1rem 0;
     }
 
+    .small-warning {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: -4px;
+      margin-bottom: 12px;
+    }
+
     .brand-item {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
@@ -228,24 +235,32 @@
       width: auto;
     }
 
-    .result-content {
+    .result-text {
       background: #f9fafb;
       padding: 1rem;
       border-radius: 6px;
-      max-height: 500px;
-      overflow-y: auto;
+      margin-bottom: 1rem;
       white-space: pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 14px;
+      line-height: 1.5;
       border: 1px solid #e5e7eb;
     }
 
-    .small-warning {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: -4px;
-      margin-bottom: 12px;
+    .image-wrap {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .image-wrap img {
+      width: 100%;
+      max-width: 900px;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
   </style>
 </head>
@@ -254,8 +269,8 @@
   <div class="container">
 
     <div class="header">
-      <h1>🎨 Generador de Contenido por Marca</h1>
-      <p>Subí manuales de marca y generá contenido respetando su identidad</p>
+      <h1>🎨 Generador de Imagen por Marca</h1>
+      <p>Subí un manual de marca y generá imágenes respetando su identidad visual</p>
     </div>
 
     <div id="setupBox" class="setup-box" style="display: none;">
@@ -289,29 +304,35 @@
       </div>
 
       <div class="card">
-        <h3>✨ Generar contenido</h3>
+        <h3>✨ Generar imagen</h3>
 
-        <label class="label">¿Qué necesitás?</label>
+        <label class="label">¿Qué imagen necesitás?</label>
         <textarea
           id="prompt"
-          placeholder="Ej: Creá un post para Instagram anunciando nuestro nuevo servicio"
-          style="min-height: 90px;"
+          placeholder="Ej: Creá una imagen para Instagram anunciando nuestro servicio de diseño de contenido para redes"
+          style="min-height: 100px;"
         ></textarea>
 
-        <label class="label">Tipo de contenido</label>
+        <label class="label">Tipo de pieza</label>
         <select id="contentType">
-          <option value="instagram-post">Post de Instagram</option>
-          <option value="instagram-story">Historia de Instagram</option>
-          <option value="carousel">Carrusel de Instagram</option>
+          <option value="instagram-post">Post de Instagram cuadrado</option>
+          <option value="instagram-story">Historia de Instagram vertical</option>
           <option value="facebook-ad">Anuncio Facebook / Meta Ads</option>
-          <option value="email">Email marketing</option>
-          <option value="product-description">Descripción de producto</option>
-          <option value="blog-post">Artículo de blog</option>
-          <option value="tiktok">Guion para TikTok / Reel</option>
+          <option value="banner-web">Banner web</option>
+          <option value="product-ad">Imagen promocional de producto</option>
+          <option value="brand-campaign">Pieza de campaña de marca</option>
+          <option value="reel-cover">Portada para Reel / TikTok</option>
         </select>
 
+        <label class="label">Texto dentro de la imagen</label>
+        <input
+          type="text"
+          id="imageText"
+          placeholder="Ej: Diseño que hace ruido"
+        />
+
         <button id="generateBtn" onclick="generateContent()" disabled>
-          ✨ Generar contenido
+          🎨 Generar imagen
         </button>
       </div>
 
@@ -319,14 +340,18 @@
 
     <div id="resultDiv" style="display: none;">
       <div class="result">
-        <h3>✅ Contenido generado</h3>
+        <h3>✅ Imagen generada</h3>
 
         <div class="result-buttons">
-          <button onclick="copyResult()">📋 Copiar</button>
-          <button onclick="downloadResult()">📥 Descargar</button>
+          <button onclick="copyResult()">📋 Copiar descripción</button>
+          <button onclick="downloadImage()">📥 Descargar imagen</button>
         </div>
 
-        <div class="result-content" id="resultContent"></div>
+        <div class="result-text" id="resultText"></div>
+
+        <div class="image-wrap">
+          <img id="resultImage" src="" alt="Imagen generada" />
+        </div>
       </div>
     </div>
 
@@ -336,6 +361,8 @@
     let brands = JSON.parse(localStorage.getItem("brands")) || [];
     let selectedBrand = null;
     let lastResult = "";
+    let lastImageUrl = "";
+    let lastMimeType = "image/png";
 
     document.addEventListener("DOMContentLoaded", () => {
       const apiKey = localStorage.getItem("geminiApiKey");
@@ -452,10 +479,11 @@
 
       const userPrompt = document.getElementById("prompt").value.trim();
       const contentType = document.getElementById("contentType").value;
+      const imageText = document.getElementById("imageText").value.trim();
       const apiKey = localStorage.getItem("geminiApiKey");
 
       if (!userPrompt) {
-        alert("Escribí qué contenido necesitás");
+        alert("Escribí qué imagen necesitás");
         return;
       }
 
@@ -474,42 +502,51 @@
 
       const generateBtn = document.getElementById("generateBtn");
       generateBtn.disabled = true;
-      generateBtn.textContent = "⏳ Generando...";
+      generateBtn.textContent = "⏳ Generando imagen...";
 
       try {
         const systemPrompt = `
-Actuá como director creativo, estratega de contenido y especialista en branding.
+Actuá como director creativo, diseñador gráfico senior y especialista en branding.
 
-A continuación tenés el manual o resumen de identidad de marca:
+Tenés que generar una imagen visual lista para usar en redes sociales o publicidad digital.
+
+Manual o resumen de identidad de marca:
 
 ${brand.content}
 
-Tu tarea es generar contenido respetando estrictamente:
-- Personalidad de marca
-- Tono de comunicación
-- Paleta de colores
-- Estilo visual
-- Valores de la marca
-- Público objetivo
-- Reglas o restricciones del manual
-
-Tipo de contenido solicitado:
+Tipo de pieza solicitada:
 ${contentType.replace(/-/g, " ")}
 
 Pedido específico del usuario:
 ${userPrompt}
 
-Respondé en español.
-Dá una pieza lista para usar.
-Si corresponde, incluí:
-- Texto principal
-- Caption
-- Idea visual
-- CTA
-- Hashtags
-- Recomendaciones de diseño
+Texto que debe aparecer dentro de la imagen:
+${imageText || "Sin texto obligatorio dentro de la imagen."}
 
-No inventes elementos que contradigan el manual de marca.
+La imagen debe respetar estrictamente:
+- Personalidad de marca
+- Tono visual
+- Paleta de colores
+- Estilo gráfico
+- Valores de la marca
+- Público objetivo
+- Reglas o restricciones del manual
+
+Indicaciones de diseño:
+- Generá una imagen profesional, moderna y lista para publicar.
+- No devuelvas solo texto. Generá una imagen.
+- Si incluís texto dentro de la imagen, que sea breve, claro, grande y legible.
+- Evitá saturar la pieza con demasiados elementos.
+- Composición limpia, estética publicitaria y alto impacto visual.
+- No uses logos de marcas reales si el manual no los incluye.
+- No inventes elementos que contradigan el manual de marca.
+- No agregues marcas de agua.
+- No agregues textos pequeños imposibles de leer.
+
+Formato:
+- Si es historia de Instagram, priorizá composición vertical.
+- Si es post de Instagram, priorizá composición cuadrada.
+- Si es banner web, priorizá composición horizontal.
 `;
 
         const response = await fetch("/api/gemini", {
@@ -530,16 +567,20 @@ No inventes elementos que contradigan el manual de marca.
           throw new Error(data.error);
         }
 
-        if (!data.text) {
+        if (!data.image) {
           console.log("Respuesta completa:", data);
-          throw new Error("La API respondió, pero no devolvió texto");
+          throw new Error("La API respondió, pero no devolvió imagen");
         }
 
-        const result = data.text;
+        const result = data.text || "Imagen generada correctamente.";
+        const imageUrl = `data:${data.mimeType || "image/png"};base64,${data.image}`;
 
         lastResult = result;
+        lastImageUrl = imageUrl;
+        lastMimeType = data.mimeType || "image/png";
 
-        document.getElementById("resultContent").textContent = result;
+        document.getElementById("resultText").textContent = result;
+        document.getElementById("resultImage").src = imageUrl;
         document.getElementById("resultDiv").style.display = "block";
 
         window.scrollTo({
@@ -551,31 +592,37 @@ No inventes elementos que contradigan el manual de marca.
         alert(`Error: ${error.message}`);
       } finally {
         generateBtn.disabled = false;
-        generateBtn.textContent = "✨ Generar contenido";
+        generateBtn.textContent = "🎨 Generar imagen";
       }
     }
 
     function copyResult() {
       if (!lastResult) {
-        alert("Todavía no hay contenido para copiar");
+        alert("Todavía no hay descripción para copiar");
         return;
       }
 
       navigator.clipboard.writeText(lastResult);
-      alert("✅ Copiado al portapapeles");
+      alert("✅ Descripción copiada al portapapeles");
     }
 
-    function downloadResult() {
-      if (!lastResult) {
-        alert("Todavía no hay contenido para descargar");
+    function downloadImage() {
+      if (!lastImageUrl) {
+        alert("Todavía no hay imagen para descargar");
         return;
       }
 
       const element = document.createElement("a");
-      const file = new Blob([lastResult], { type: "text/plain" });
+      element.href = lastImageUrl;
 
-      element.href = URL.createObjectURL(file);
-      element.download = "contenido-generado.txt";
+      let extension = "png";
+      if (lastMimeType.includes("jpeg") || lastMimeType.includes("jpg")) {
+        extension = "jpg";
+      } else if (lastMimeType.includes("webp")) {
+        extension = "webp";
+      }
+
+      element.download = `imagen-generada.${extension}`;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
