@@ -63,6 +63,90 @@ async function generateWithPollinations({
   width,
   height
 }) {
+  if (apiKey) {
+    return await generateWithPollinationsPost({
+      res,
+      prompt,
+      model,
+      apiKey,
+      width,
+      height
+    });
+  }
+
+  return await generateWithPollinationsPublicUrl({
+    res,
+    prompt,
+    model,
+    width,
+    height
+  });
+}
+
+async function generateWithPollinationsPublicUrl({
+  res,
+  prompt,
+  model,
+  width,
+  height
+}) {
+  const shortPrompt = buildShortPrompt(prompt);
+
+  const encodedPrompt = encodeURIComponent(shortPrompt);
+
+  const params = new URLSearchParams({
+    model: model || "flux",
+    width: String(width || 1024),
+    height: String(height || 1024),
+    seed: String(Math.floor(Math.random() * 999999)),
+    nologo: "true",
+    safe: "true"
+  });
+
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent": "brand-generator/1.0"
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    return res.status(response.status).json({
+      error: errorText || "Error generando imagen con Pollinations público",
+      provider: "pollinations",
+      model,
+      mode: "public-url",
+      url
+    });
+  }
+
+  const contentType = response.headers.get("content-type") || "image/png";
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const base64Image = buffer.toString("base64");
+
+  return res.status(200).json({
+    text: "Imagen generada con Pollinations sin API Key.",
+    image: base64Image,
+    mimeType: contentType,
+    provider: "pollinations",
+    model,
+    mode: "public-url"
+  });
+}
+
+async function generateWithPollinationsPost({
+  res,
+  prompt,
+  model,
+  apiKey,
+  width,
+  height
+}) {
   const cleanPrompt = String(prompt || "")
     .replace(/\s+/g, " ")
     .trim()
@@ -70,17 +154,12 @@ async function generateWithPollinations({
 
   const size = `${width || 1024}x${height || 1024}`;
 
-  const headers = {
-    "Content-Type": "application/json"
-  };
-
-  if (apiKey) {
-    headers.Authorization = `Bearer ${apiKey}`;
-  }
-
   const response = await fetch("https://gen.pollinations.ai/v1/images/generations", {
     method: "POST",
-    headers,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
     body: JSON.stringify({
       prompt: cleanPrompt,
       model: model || "flux",
@@ -106,6 +185,7 @@ async function generateWithPollinations({
       error: data.error?.message || "Error generando imagen con Pollinations",
       provider: "pollinations",
       model,
+      mode: "post",
       raw: data
     });
   }
@@ -127,7 +207,8 @@ async function generateWithPollinations({
       image,
       mimeType: "image/png",
       provider: "pollinations",
-      model
+      model,
+      mode: "post"
     });
   }
 
@@ -154,6 +235,7 @@ async function generateWithPollinations({
       mimeType: contentType,
       provider: "pollinations",
       model,
+      mode: "post",
       imageUrl
     });
   }
@@ -164,6 +246,46 @@ async function generateWithPollinations({
     model,
     raw: data
   });
+}
+
+function buildShortPrompt(prompt) {
+  const value = String(prompt || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const brandProfileMatch = value.match(/Brand profile:(.*?)(Detected type:|Requested piece:|User request:)/i);
+  const userRequestMatch = value.match(/User request:(.*?)(Text to include in the image:|Reference context:|Visual rules:)/i);
+  const textMatch = value.match(/Text to include in the image:(.*?)(Reference context:|Visual rules:)/i);
+  const detectedTypeMatch = value.match(/Detected type:(.*?)(Requested piece:|User request:)/i);
+
+  const brandProfile = brandProfileMatch ? brandProfileMatch[1].trim() : "";
+  const userRequest = userRequestMatch ? userRequestMatch[1].trim() : value;
+  const imageText = textMatch ? textMatch[1].trim() : "";
+  const detectedType = detectedTypeMatch ? detectedTypeMatch[1].trim() : "";
+
+  const shortPrompt = `
+Professional advertising image for a brand.
+
+Main request:
+${userRequest}
+
+Brand context:
+${brandProfile}
+
+Detected type:
+${detectedType}
+
+Text in image:
+${imageText}
+
+Style:
+premium commercial design, clean composition, high-quality lighting, modern branding, social media advertising, no watermark, no external brands, legible short text only.
+`;
+
+  return shortPrompt
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1800);
 }
 
 async function generateWithGemini({
