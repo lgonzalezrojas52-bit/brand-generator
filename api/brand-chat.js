@@ -36,48 +36,81 @@ export default async function handler(req, res) {
   }
 
   try {
-    const lastMessages = messages.slice(-6);
+    const lastMessages = messages.slice(-5);
 
     const conversationText = lastMessages
       .map((msg) => {
         const role = msg.role === "assistant" ? "IA" : "Usuario";
-        return `${role}: ${trimText(msg.content, 900)}`;
+        return `${role}: ${trimText(msg.content, 650)}`;
       })
       .join("\n\n");
 
-    const compactProfile = trimText(currentProfile || "", 4500);
+    const compactProfile = getSmartProfileSummary(currentProfile || "");
+
+    const latestUserMessage = [...messages]
+      .reverse()
+      .find((msg) => msg.role === "user")?.content || "";
 
     const prompt = `
-Actuá como estratega de marca y director creativo.
+Actuá como estratega de marca, director creativo y asistente de producción visual.
 
-Tu trabajo es ayudar al usuario a construir un perfil de marca y detectar qué información o fotos hacen falta para generar una imagen publicitaria.
+Tu tarea es ayudar al usuario a preparar una imagen publicitaria respetando el perfil de marca cargado.
 
-Marca:
+MARCA:
 ${brandName}
 
-Perfil actual de marca resumido:
+PERFIL DE MARCA CARGADO:
 ${compactProfile || "Todavía no hay perfil de marca definido."}
 
-Última conversación:
+ÚLTIMO MENSAJE DEL USUARIO:
+${latestUserMessage}
+
+ÚLTIMA CONVERSACIÓN:
 ${conversationText}
 
-Reglas:
+INSTRUCCIONES IMPORTANTES:
+- Usá activamente la información del perfil de marca cargado.
+- Si el perfil menciona colores, tono, producto, claims, arquetipos o valores, usalos en tu respuesta.
+- No respondas genérico si el perfil ya tiene información útil.
 - Respondé en español.
-- Sé claro, práctico y breve.
+- Sé breve, claro y práctico.
+- Hacé una sola pregunta principal al final.
 - No pidas todo a la vez.
-- Hacé una sola pregunta principal por mensaje.
-- Si es un producto, pedí foto del producto.
-- Si es un servicio, preguntá si tiene un entregable visual: web, app, diseño, resultado, espacio, captura o antes/después.
-- Si es campaña, preguntá objetivo, público y mensaje principal.
-- Si es marca institucional, preguntá sensación a transmitir y pedí logo/manual si falta.
-- No inventes datos.
-- Conservá lo importante del perfil anterior.
-- Si ya hay suficiente información, readyToGenerate puede ser true.
+- No inventes datos que no estén en el perfil o en la conversación.
 
-Devolvé únicamente JSON válido con esta estructura:
+REGLAS DE DETECCIÓN:
+
+Si el usuario menciona:
+"lata", "bebida", "energética", "packaging", "envase", "producto", "sabor", "presentar una lata"
+entonces detectedType debe ser "producto".
+
+Si es producto:
+- Pedí una foto o referencia visual del producto.
+- Si el producto tiene sabores o variantes, preguntá cuál se quiere mostrar.
+- Si el perfil de marca tiene colores o sabores, mencioná los más importantes.
+- No preguntes de forma genérica "cuál es el diseño"; pedí algo accionable:
+  "subí una foto de la lata o decime qué sabor querés mostrar".
+
+Si es servicio:
+- Preguntá si tiene un entregable visual: web, app, diseño, resultado, espacio, captura, antes/después.
+- Si lo tiene, pedí foto/captura/referencia.
+
+Si es campaña:
+- Preguntá objetivo, público y mensaje principal.
+
+Si es marca institucional:
+- Preguntá sensación a transmitir y pedí logo/manual si falta.
+
+CRITERIO PARA readyToGenerate:
+- true si ya hay suficiente información para generar una imagen razonable.
+- false si falta una foto/referencia clave del producto o falta el objetivo de la pieza.
+
+Para productos físicos, si no hay foto o referencia visual del producto, readyToGenerate debe ser false.
+
+Devolvé únicamente JSON válido con esta estructura exacta:
 
 {
-  "reply": "respuesta conversacional breve para el usuario",
+  "reply": "respuesta conversacional breve para el usuario, usando datos del perfil de marca",
   "updatedProfile": "perfil de marca actualizado y resumido",
   "detectedType": "producto | servicio | marca institucional | campaña | evento | otro | no especificado",
   "needsVisualAssets": true,
@@ -148,7 +181,7 @@ No agregues texto fuera del JSON.
 
     const updatedProfile = trimText(
       parsed.updatedProfile || currentProfile || "",
-      5500
+      5000
     );
 
     return res.status(200).json({
@@ -178,7 +211,62 @@ function trimText(text, maxLength) {
     return value;
   }
 
-  return value.slice(0, maxLength) + "\n\n[Contenido resumido por límite de tokens]";
+  return value.slice(0, maxLength) + "\n\n[Contenido recortado por límite de tokens]";
+}
+
+function getSmartProfileSummary(profile) {
+  const value = String(profile || "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  if (value.length <= 3800) {
+    return value;
+  }
+
+  const lower = value.toLowerCase();
+
+  const importantKeywords = [
+    "resumen ejecutivo",
+    "descripción general",
+    "propósito",
+    "propuesta de valor",
+    "beneficios funcionales",
+    "beneficios emocionales",
+    "arquetipos",
+    "sistema visual",
+    "paleta",
+    "colores",
+    "tipografía",
+    "producto",
+    "voz",
+    "tono",
+    "claims",
+    "prompt base"
+  ];
+
+  const chunks = [];
+
+  chunks.push(value.slice(0, 1800));
+
+  importantKeywords.forEach((keyword) => {
+    const index = lower.indexOf(keyword);
+
+    if (index !== -1) {
+      const start = Math.max(0, index - 250);
+      const end = Math.min(value.length, index + 900);
+      const fragment = value.slice(start, end);
+
+      if (!chunks.some((chunk) => chunk.includes(fragment.slice(0, 120)))) {
+        chunks.push(fragment);
+      }
+    }
+  });
+
+  const joined = chunks.join("\n\n---\n\n");
+
+  return trimText(joined, 4200);
 }
 
 async function callGeminiText({ apiKey, model, prompt }) {
@@ -231,8 +319,8 @@ async function callGroqText({ apiKey, model, prompt }) {
           content: prompt
         }
       ],
-      temperature: 0.4,
-      max_tokens: 900,
+      temperature: 0.35,
+      max_tokens: 850,
       response_format: {
         type: "json_object"
       }
