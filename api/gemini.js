@@ -5,7 +5,17 @@ export default async function handler(req, res) {
     });
   }
 
-  const { prompt, apiKey, referenceImage, referenceImages } = req.body;
+  const {
+    prompt,
+    apiKey,
+    aiConfig,
+    referenceImage,
+    referenceImages
+  } = req.body;
+
+  const finalApiKey = aiConfig?.apiKey || apiKey;
+  const provider = aiConfig?.provider || "gemini";
+  const imageModel = aiConfig?.imageModel || "gemini-3.1-flash-image";
 
   if (!prompt) {
     return res.status(400).json({
@@ -13,15 +23,19 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!apiKey) {
+  if (!finalApiKey) {
     return res.status(400).json({
       error: "Falta la API Key"
     });
   }
 
-  try {
-    const MODEL = "gemini-3.1-flash-image";
+  if (provider !== "gemini") {
+    return res.status(400).json({
+      error: "Por ahora este endpoint solo soporta Gemini. Después sumamos OpenAI."
+    });
+  }
 
+  try {
     const parts = [
       {
         text: prompt
@@ -49,7 +63,7 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateContent?key=${finalApiKey}`,
       {
         method: "POST",
         headers: {
@@ -73,7 +87,8 @@ export default async function handler(req, res) {
     if (!response.ok) {
       return res.status(response.status).json({
         error: data.error?.message || "Error en Gemini",
-        model: MODEL,
+        provider,
+        model: imageModel,
         raw: data
       });
     }
@@ -98,7 +113,8 @@ export default async function handler(req, res) {
     if (!image) {
       return res.status(500).json({
         error: "Gemini respondió, pero no devolvió imagen",
-        model: MODEL,
+        provider,
+        model: imageModel,
         raw: data
       });
     }
@@ -107,7 +123,8 @@ export default async function handler(req, res) {
       text,
       image,
       mimeType,
-      model: MODEL
+      provider,
+      model: imageModel
     });
 
   } catch (error) {
