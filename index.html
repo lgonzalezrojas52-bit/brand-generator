@@ -24,7 +24,6 @@
       --orange: #fb923c;
       --red: #ef4444;
       --radius-xl: 28px;
-      --radius-lg: 20px;
       --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
       --blur: blur(22px);
     }
@@ -196,7 +195,6 @@
     }
 
     .step-pill {
-      position: relative;
       padding: 14px;
       border-radius: 18px;
       background: rgba(255,255,255,0.055);
@@ -750,8 +748,7 @@
         Generá imágenes de marca en <span>tres etapas simples.</span>
       </h1>
       <p>
-        Primero configurás el modelo, después construís el perfil con un chat inteligente
-        y finalmente generás la pieza visual con las fotos/referencias necesarias.
+        Usá Groq para el chat de marca y Pollinations para generar imágenes sin depender de tarjeta.
       </p>
     </section>
 
@@ -759,13 +756,13 @@
       <div class="step-pill active" id="stepPill1" onclick="goToStep(1)">
         <div class="step-number">1</div>
         <div class="step-name">Configurar IA</div>
-        <div class="step-desc">API Key, modelo de texto y modelo de imagen.</div>
+        <div class="step-desc">Proveedor de texto y proveedor de imagen.</div>
       </div>
 
       <div class="step-pill" id="stepPill2" onclick="goToStep(2)">
         <div class="step-number">2</div>
         <div class="step-name">Chat de marca</div>
-        <div class="step-desc">Manual, estrategia, producto, servicio y assets.</div>
+        <div class="step-desc">Estrategia, producto, servicio y assets.</div>
       </div>
 
       <div class="step-pill" id="stepPill3" onclick="goToStep(3)">
@@ -775,56 +772,58 @@
       </div>
     </section>
 
-    <!-- ETAPA 1 -->
     <section id="step1" class="step-section active">
       <div class="panel">
         <div class="panel-head">
           <div class="eyebrow">Etapa 1</div>
-          <div class="panel-title">⚙️ Configurar proveedor de IA</div>
+          <div class="panel-title">⚙️ Configurar IA</div>
         </div>
 
         <div class="panel-body">
           <div class="two-col">
             <div>
               <div class="field">
-                <label>Proveedor <small>por ahora Gemini</small></label>
-                <select id="aiProvider">
+                <label>Proveedor de texto <small>chat y estrategia</small></label>
+                <select id="textProvider" onchange="handleTextProviderChange()">
+                  <option value="groq">Groq</option>
                   <option value="gemini">Gemini</option>
                 </select>
               </div>
 
               <div class="field">
-                <label>API Key <small>se guarda localmente</small></label>
-                <input type="password" id="aiApiKey" placeholder="Pegá tu API Key" />
+                <label>API Key texto <small>Groq: gsk_...</small></label>
+                <input type="password" id="textApiKey" placeholder="Pegá tu API Key de texto" />
+              </div>
+
+              <div class="field">
+                <label>Modelo de texto</label>
+                <select id="textModel"></select>
               </div>
             </div>
 
             <div>
               <div class="field">
-                <label>Modelo de texto <small>chat y análisis</small></label>
-                <select id="textModel">
-                  <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                  <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                  <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                  <option value="gemini-flash-latest">gemini-flash-latest</option>
-                  <option value="gemini-pro-latest">gemini-pro-latest</option>
+                <label>Proveedor de imagen <small>generación visual</small></label>
+                <select id="imageProvider" onchange="handleImageProviderChange()">
+                  <option value="pollinations">Pollinations</option>
+                  <option value="gemini">Gemini</option>
                 </select>
               </div>
 
+              <div class="field" id="imageApiKeyField">
+                <label>API Key imagen <small>opcional para Pollinations</small></label>
+                <input type="password" id="imageApiKey" placeholder="Opcional / Gemini requiere API Key" />
+              </div>
+
               <div class="field">
-                <label>Modelo de imagen <small>generación visual</small></label>
-                <select id="imageModel">
-                  <option value="gemini-3.1-flash-image">gemini-3.1-flash-image</option>
-                  <option value="gemini-3-pro-image">gemini-3-pro-image</option>
-                  <option value="gemini-3-pro-image-preview">gemini-3-pro-image-preview</option>
-                  <option value="gemini-2.5-flash-image">gemini-2.5-flash-image</option>
-                </select>
+                <label>Modelo de imagen</label>
+                <select id="imageModel"></select>
               </div>
             </div>
           </div>
 
           <div class="hint">
-            Si un modelo de imagen falla por permisos, billing o acceso, probás otro desde este selector sin tocar código.
+            Para usar sin tarjeta: Texto = Groq / Imagen = Pollinations / Modelo imagen = flux.
           </div>
 
           <div class="btn-row">
@@ -834,7 +833,6 @@
       </div>
     </section>
 
-    <!-- ETAPA 2 -->
     <section id="step2" class="step-section">
       <div class="two-col">
         <div>
@@ -851,10 +849,10 @@
               </div>
 
               <div class="field">
-                <label>Manual de marca <small>opcional · PDF o TXT</small></label>
+                <label>Manual de marca <small>opcional · TXT recomendado con Groq</small></label>
                 <input type="file" id="brandFile" accept=".txt,.pdf" />
                 <div class="hint">
-                  Si subís un PDF visual, la app analiza hasta 10 páginas como imágenes y suma esa información al perfil.
+                  Con Groq conviene usar TXT o escribir la info en el chat. El análisis visual de PDF funciona mejor con Gemini.
                 </div>
               </div>
 
@@ -907,7 +905,6 @@
       </div>
     </section>
 
-    <!-- ETAPA 3 -->
     <section id="step3" class="step-section">
       <div class="two-col">
         <div>
@@ -919,7 +916,7 @@
 
             <div class="panel-body">
               <div class="field">
-                <label>Subir imágenes <small>producto, packaging, logo, captura, referencia</small></label>
+                <label>Subir imágenes <small>producto, packaging, logo, referencia</small></label>
                 <input
                   type="file"
                   id="visualAssetFiles"
@@ -928,7 +925,7 @@
                   onchange="handleVisualAssetsUpload()"
                 />
                 <div class="hint">
-                  Subí lo que el chat te haya pedido. Ejemplo: foto de producto, packaging, logo, captura de web, espacio, resultado final o referencia visual.
+                  Pollinations no usa estas imágenes como referencia directa todavía, pero sí usamos su descripción dentro del prompt.
                 </div>
               </div>
 
@@ -1016,7 +1013,7 @@
     </section>
 
     <div class="footer-note">
-      La API Key, el perfil de marca y las imágenes se guardan localmente en tu navegador.
+      Las API Keys y datos se guardan localmente en tu navegador.
     </div>
 
   </main>
@@ -1060,42 +1057,136 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    function getTextModelsForProvider(provider) {
+      if (provider === "groq") {
+        return [
+          { value: "llama-3.1-8b-instant", label: "llama-3.1-8b-instant" },
+          { value: "llama-3.3-70b-versatile", label: "llama-3.3-70b-versatile" }
+        ];
+      }
+
+      return [
+        { value: "gemini-2.5-flash", label: "gemini-2.5-flash" },
+        { value: "gemini-2.5-pro", label: "gemini-2.5-pro" },
+        { value: "gemini-2.0-flash", label: "gemini-2.0-flash" },
+        { value: "gemini-flash-latest", label: "gemini-flash-latest" },
+        { value: "gemini-pro-latest", label: "gemini-pro-latest" }
+      ];
+    }
+
+    function getImageModelsForProvider(provider) {
+      if (provider === "pollinations") {
+        return [
+          { value: "flux", label: "flux" },
+          { value: "turbo", label: "turbo" },
+          { value: "gptimage", label: "gptimage" },
+          { value: "zimage", label: "zimage" }
+        ];
+      }
+
+      return [
+        { value: "gemini-3.1-flash-image", label: "gemini-3.1-flash-image" },
+        { value: "gemini-3-pro-image", label: "gemini-3-pro-image" },
+        { value: "gemini-3-pro-image-preview", label: "gemini-3-pro-image-preview" },
+        { value: "gemini-2.5-flash-image", label: "gemini-2.5-flash-image" }
+      ];
+    }
+
+    function populateSelect(selectId, options, selectedValue = "") {
+      const select = document.getElementById(selectId);
+      select.innerHTML = "";
+
+      options.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        select.appendChild(option);
+      });
+
+      const exists = options.some((item) => item.value === selectedValue);
+
+      if (selectedValue && exists) {
+        select.value = selectedValue;
+      } else {
+        select.value = options[0].value;
+      }
+    }
+
+    function handleTextProviderChange() {
+      const provider = document.getElementById("textProvider").value;
+      populateSelect("textModel", getTextModelsForProvider(provider));
+    }
+
+    function handleImageProviderChange() {
+      const provider = document.getElementById("imageProvider").value;
+      populateSelect("imageModel", getImageModelsForProvider(provider));
+
+      const imageApiKeyField = document.getElementById("imageApiKeyField");
+
+      if (provider === "pollinations") {
+        imageApiKeyField.style.display = "block";
+        document.getElementById("imageApiKey").placeholder = "Opcional para Pollinations";
+      } else {
+        imageApiKeyField.style.display = "block";
+        document.getElementById("imageApiKey").placeholder = "Gemini requiere API Key";
+      }
+    }
+
     function getAIConfig() {
       const saved = JSON.parse(localStorage.getItem("aiConfig") || "{}");
 
       return {
-        provider: saved.provider || "gemini",
-        apiKey: saved.apiKey || localStorage.getItem("geminiApiKey") || "",
-        textModel: saved.textModel || "gemini-2.5-flash",
-        imageModel: saved.imageModel || "gemini-3.1-flash-image"
+        provider: saved.textProvider || saved.provider || "groq",
+        apiKey: saved.textApiKey || saved.apiKey || "",
+        textProvider: saved.textProvider || saved.provider || "groq",
+        textApiKey: saved.textApiKey || saved.apiKey || "",
+        textModel: saved.textModel || "llama-3.1-8b-instant",
+        imageProvider: saved.imageProvider || "pollinations",
+        imageApiKey: saved.imageApiKey || "",
+        imageModel: saved.imageModel || "flux"
       };
     }
 
     function loadAIConfigIntoForm() {
       const config = getAIConfig();
 
-      document.getElementById("aiProvider").value = config.provider;
-      document.getElementById("aiApiKey").value = config.apiKey;
-      document.getElementById("textModel").value = config.textModel;
-      document.getElementById("imageModel").value = config.imageModel;
+      document.getElementById("textProvider").value = config.textProvider;
+      populateSelect("textModel", getTextModelsForProvider(config.textProvider), config.textModel);
+      document.getElementById("textApiKey").value = config.textApiKey;
+
+      document.getElementById("imageProvider").value = config.imageProvider;
+      populateSelect("imageModel", getImageModelsForProvider(config.imageProvider), config.imageModel);
+      document.getElementById("imageApiKey").value = config.imageApiKey || "";
+
+      handleImageProviderChange();
     }
 
     function saveAIConfig() {
+      const textProvider = document.getElementById("textProvider").value;
+      const imageProvider = document.getElementById("imageProvider").value;
+
       const config = {
-        provider: document.getElementById("aiProvider").value,
-        apiKey: document.getElementById("aiApiKey").value.trim(),
+        textProvider,
+        provider: textProvider,
+        textApiKey: document.getElementById("textApiKey").value.trim(),
+        apiKey: document.getElementById("textApiKey").value.trim(),
         textModel: document.getElementById("textModel").value,
+        imageProvider,
+        imageApiKey: document.getElementById("imageApiKey").value.trim(),
         imageModel: document.getElementById("imageModel").value
       };
 
-      if (!config.apiKey) {
-        alert("Pegá una API Key primero");
+      if (!config.textApiKey) {
+        alert("Pegá una API Key de texto primero. Para tu caso, la API Key de Groq.");
+        return false;
+      }
+
+      if (config.imageProvider === "gemini" && !config.imageApiKey && config.textProvider !== "gemini") {
+        alert("Para usar Gemini como imagen necesitás una API Key de Gemini en el campo de imagen.");
         return false;
       }
 
       localStorage.setItem("aiConfig", JSON.stringify(config));
-      localStorage.setItem("geminiApiKey", config.apiKey);
-
       updateTopStatus();
 
       return true;
@@ -1114,11 +1205,7 @@
       const config = getAIConfig();
       const topStatus = document.getElementById("topStatus");
 
-      if (config.apiKey) {
-        topStatus.innerHTML = `<span>●</span> ${config.provider} · ${config.textModel}`;
-      } else {
-        topStatus.innerHTML = `<span>●</span> IA configurable`;
-      }
+      topStatus.innerHTML = `<span>●</span> Texto: ${config.textProvider} · Imagen: ${config.imageProvider}`;
     }
 
     function getBrandName() {
@@ -1271,8 +1358,8 @@
         return;
       }
 
-      if (!aiConfig.apiKey) {
-        alert("Guardá una API Key en la configuración primero");
+      if (!aiConfig.textApiKey) {
+        alert("Guardá una API Key de texto primero");
         goToStep(1);
         return;
       }
@@ -1285,6 +1372,11 @@
 
       if (!isTxt && !isPdf) {
         alert("Solo se permiten archivos .txt o .pdf");
+        return;
+      }
+
+      if (isPdf && aiConfig.textProvider !== "gemini") {
+        alert("El análisis visual de PDF requiere Gemini. Con Groq usá TXT o pegá la información en el chat.");
         return;
       }
 
@@ -1323,18 +1415,16 @@ ${manualProfile}
 
         localStorage.setItem("brandProfile", currentProfile);
 
-        const assistantMessage = "Perfecto, ya analicé el manual y sumé esa información al perfil de marca. Ahora contame qué querés generar: ¿producto, servicio, campaña, evento o marca institucional?";
-
         chatMessages.push({
           role: "assistant",
-          content: assistantMessage
+          content: "Perfecto, ya sumé esa información al perfil de marca. Ahora contame qué querés generar: ¿producto, servicio, campaña, evento o marca institucional?"
         });
 
         localStorage.setItem("brandChatMessages", JSON.stringify(chatMessages));
 
         renderAll();
 
-        alert("✅ Manual analizado y sumado al perfil");
+        alert("✅ Manual sumado al perfil");
 
       } catch (error) {
         console.error(error);
@@ -1438,8 +1528,8 @@ ${manualProfile}
         return;
       }
 
-      if (!aiConfig.apiKey) {
-        alert("Guardá una API Key en la configuración primero");
+      if (!aiConfig.textApiKey) {
+        alert("Guardá una API Key de texto primero");
         goToStep(1);
         return;
       }
@@ -1618,6 +1708,27 @@ ${manualProfile}
       });
     }
 
+    function getImageSizeByContentType(contentType) {
+      if (contentType === "instagram-story" || contentType === "reel-cover") {
+        return {
+          width: 1080,
+          height: 1920
+        };
+      }
+
+      if (contentType === "banner-web") {
+        return {
+          width: 1600,
+          height: 900
+        };
+      }
+
+      return {
+        width: 1024,
+        height: 1024
+      };
+    }
+
     async function generateContent() {
       const brandName = getBrandName();
       const aiConfig = getAIConfig();
@@ -1630,12 +1741,6 @@ ${manualProfile}
       if (!brandName) {
         alert("Escribí el nombre de la marca primero");
         goToStep(2);
-        return;
-      }
-
-      if (!aiConfig.apiKey) {
-        alert("Guardá una API Key en la configuración primero");
-        goToStep(1);
         return;
       }
 
@@ -1657,52 +1762,44 @@ ${manualProfile}
         generateBtn.textContent = "⏳ Generando imagen...";
 
         const referencesSummary = visualAssets.length > 0
-          ? `Se adjuntan ${visualAssets.length} imágenes de referencia: producto, logo, packaging, capturas o referencias visuales. Usalas como guía visual.`
+          ? `El usuario cargó ${visualAssets.length} imágenes de referencia. No copies elementos exactos si el proveedor no soporta imagen de referencia, pero interpretá que existen referencias visuales de producto, logo, packaging o estilo.`
           : "No se adjuntaron imágenes de referencia.";
 
         const systemPrompt = `
-Actuá como director creativo, diseñador gráfico senior y especialista en branding.
+Create a professional advertising image.
 
-Tenés que generar una imagen visual lista para usar en redes sociales o publicidad digital.
-
-Marca visible:
+Visible brand name:
 ${visibleBrandName}
 
-Tipo detectado por el chat:
+Brand profile:
+${currentProfile || "No detailed brand profile. Use the user's request."}
+
+Detected type:
 ${detectedType}
 
-Perfil de marca construido:
-
-${currentProfile || "No hay perfil de marca detallado. Usar la información disponible del pedido."}
-
-Tipo de pieza solicitada:
+Requested piece:
 ${contentType.replace(/-/g, " ")}
 
-Pedido específico del usuario:
+User request:
 ${userPrompt}
 
-Texto que debe aparecer dentro de la imagen:
-${imageText || "Sin texto obligatorio dentro de la imagen."}
+Text to include in the image:
+${imageText || "No mandatory text."}
 
-Imágenes de referencia:
+Reference context:
 ${referencesSummary}
 
-Reglas importantes:
-- Si se adjuntan fotos de producto, el producto debe ser protagonista o estar correctamente integrado.
-- Si se adjunta packaging, respetar su presencia visual.
-- Si se adjunta logo, usarlo como referencia de identidad, sin deformarlo.
-- Si se adjuntan capturas o resultados visuales de un servicio, usarlos para representar el servicio.
-- No uses marcas externas.
-- No agregues marcas de agua.
-- No inventes logos contradictorios.
-- Si incluís texto, debe ser breve, grande y legible.
-- Composición limpia, estética publicitaria, moderna y profesional.
-- Respetar colores, tono visual, personalidad, público objetivo y estilo de marca.
-
-Formato:
-- Si es historia de Instagram, priorizá composición vertical 9:16.
-- Si es post de Instagram, priorizá composición cuadrada 1:1.
-- Si es banner web, priorizá composición horizontal.
+Visual rules:
+- Professional commercial design.
+- Clean composition.
+- High-quality lighting.
+- Modern branding.
+- No watermark.
+- No distorted text.
+- If text appears, it must be short and legible.
+- Respect the brand style, colors, audience and tone.
+- Do not include external brands.
+- Make it suitable for social media advertising.
 `;
 
         const referenceImages = visualAssets
@@ -1712,7 +1809,9 @@ Formato:
             data: asset.data
           }));
 
-        const response = await fetch("/api/gemini", {
+        const size = getImageSizeByContentType(contentType);
+
+        const response = await fetch("/api/generate-image", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -1720,7 +1819,9 @@ Formato:
           body: JSON.stringify({
             prompt: systemPrompt,
             aiConfig,
-            referenceImages
+            referenceImages,
+            width: size.width,
+            height: size.height
           })
         });
 
@@ -1736,7 +1837,7 @@ Formato:
           throw new Error("La API respondió, pero no devolvió imagen");
         }
 
-        const result = data.text || "Imagen generada correctamente.";
+        const result = `${data.text || "Imagen generada correctamente."}\n\nProveedor: ${data.provider || "no especificado"}\nModelo: ${data.model || "no especificado"}`;
         const imageUrl = `data:${data.mimeType || "image/png"};base64,${data.image}`;
 
         lastResult = result;
