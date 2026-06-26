@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
@@ -36,7 +36,10 @@ export default async function handler(req, res) {
                 }
               ]
             }
-          ]
+          ],
+          generationConfig: {
+            responseModalities: ["TEXT", "IMAGE"]
+          }
         })
       }
     );
@@ -50,17 +53,34 @@ export default async function handler(req, res) {
       });
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data?.candidates?.[0]?.content?.parts || [];
 
-    if (!text) {
+    let text = "";
+    let image = null;
+    let mimeType = "image/png";
+
+    for (const part of parts) {
+      if (part.text) {
+        text += part.text;
+      }
+
+      if (part.inlineData?.data) {
+        image = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || "image/png";
+      }
+    }
+
+    if (!image) {
       return res.status(500).json({
-        error: "Gemini respondió, pero no devolvió texto",
+        error: "Gemini respondió, pero no devolvió imagen",
         raw: data
       });
     }
 
     return res.status(200).json({
-      text
+      text,
+      image,
+      mimeType
     });
 
   } catch (error) {
