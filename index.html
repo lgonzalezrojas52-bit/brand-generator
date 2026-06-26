@@ -467,7 +467,7 @@
       display: none;
       margin-top: 16px;
       padding: 15px;
-      max-height: 300px;
+      max-height: 360px;
       overflow-y: auto;
       border-radius: 18px;
       background: rgba(0,0,0,0.22);
@@ -748,7 +748,7 @@
         Generá imágenes de marca en <span>tres etapas simples.</span>
       </h1>
       <p>
-        Usá Groq para el chat de marca y Pollinations para generar imágenes sin depender de tarjeta.
+        Usá Groq para analizar el manual y construir el perfil de marca. Después usá Pollinations para generar imágenes sin depender de tarjeta.
       </p>
     </section>
 
@@ -762,7 +762,7 @@
       <div class="step-pill" id="stepPill2" onclick="goToStep(2)">
         <div class="step-number">2</div>
         <div class="step-name">Chat de marca</div>
-        <div class="step-desc">Estrategia, producto, servicio y assets.</div>
+        <div class="step-desc">Analizá manual, estrategia, producto y assets.</div>
       </div>
 
       <div class="step-pill" id="stepPill3" onclick="goToStep(3)">
@@ -783,7 +783,7 @@
           <div class="two-col">
             <div>
               <div class="field">
-                <label>Proveedor de texto <small>chat y estrategia</small></label>
+                <label>Proveedor de texto <small>chat y análisis de manual</small></label>
                 <select id="textProvider" onchange="handleTextProviderChange()">
                   <option value="groq">Groq</option>
                   <option value="gemini">Gemini</option>
@@ -823,7 +823,7 @@
           </div>
 
           <div class="hint">
-            Para usar sin tarjeta: Texto = Groq / Imagen = Pollinations / Modelo imagen = flux.
+            Para usar sin tarjeta: Texto = Groq / Modelo texto = llama-3.1-8b-instant / Imagen = Pollinations / Modelo imagen = flux.
           </div>
 
           <div class="btn-row">
@@ -849,10 +849,10 @@
               </div>
 
               <div class="field">
-                <label>Manual de marca <small>opcional · TXT recomendado con Groq</small></label>
+                <label>Manual de marca <small>TXT recomendado con Groq</small></label>
                 <input type="file" id="brandFile" accept=".txt,.pdf" />
                 <div class="hint">
-                  Con Groq conviene usar TXT o escribir la info en el chat. El análisis visual de PDF funciona mejor con Gemini.
+                  TXT: se analiza con IA y se convierte en perfil optimizado. PDF visual funciona mejor con Gemini.
                 </div>
               </div>
 
@@ -884,7 +884,7 @@
                 <label>Contale algo a la IA <small>marca, producto, servicio, campaña</small></label>
                 <textarea
                   id="chatInput"
-                  placeholder="Ej: La marca vende ropa deportiva premium. Queremos una estética competitiva, oscura y moderna..."
+                  placeholder="Ej: Usando el perfil de marca cargado, quiero generar una imagen para presentar una lata de bebida energética..."
                 ></textarea>
               </div>
 
@@ -925,7 +925,7 @@
                   onchange="handleVisualAssetsUpload()"
                 />
                 <div class="hint">
-                  Pollinations no usa estas imágenes como referencia directa todavía, pero sí usamos su descripción dentro del prompt.
+                  Pollinations no usa imagen de referencia directa todavía, pero el sistema usa el perfil de marca y el prompt para guiar la generación.
                 </div>
               </div>
 
@@ -955,7 +955,7 @@
                 <label>¿Qué imagen necesitás? <small>obligatorio</small></label>
                 <textarea
                   id="prompt"
-                  placeholder="Ej: Creá una imagen para Instagram presentando la nueva colección premium de ropa deportiva."
+                  placeholder="Ej: Imagen publicitaria premium para presentar una lata de bebida energética natural con cafeína de yerba mate..."
                 ></textarea>
               </div>
 
@@ -977,7 +977,7 @@
                 <input
                   type="text"
                   id="imageText"
-                  placeholder="Ej: Alto rendimiento. Estilo premium."
+                  placeholder="Ej: Energía con propósito"
                 />
               </div>
 
@@ -1121,14 +1121,12 @@
       const provider = document.getElementById("imageProvider").value;
       populateSelect("imageModel", getImageModelsForProvider(provider));
 
-      const imageApiKeyField = document.getElementById("imageApiKeyField");
+      const imageApiKeyInput = document.getElementById("imageApiKey");
 
       if (provider === "pollinations") {
-        imageApiKeyField.style.display = "block";
-        document.getElementById("imageApiKey").placeholder = "Opcional para Pollinations";
+        imageApiKeyInput.placeholder = "Opcional para Pollinations";
       } else {
-        imageApiKeyField.style.display = "block";
-        document.getElementById("imageApiKey").placeholder = "Gemini requiere API Key";
+        imageApiKeyInput.placeholder = "Gemini requiere API Key";
       }
     }
 
@@ -1275,7 +1273,7 @@
         const welcome = document.createElement("div");
         welcome.className = "msg assistant";
         welcome.textContent =
-          "Contame qué querés trabajar: ¿una marca institucional, un producto, un servicio, una campaña o un evento? Si es producto, después te voy a pedir foto del producto. Si es servicio, primero voy a ver si tiene algún entregable visual.";
+          "Contame qué querés trabajar: ¿una marca institucional, un producto, un servicio, una campaña o un evento? Si ya cargaste un manual, lo voy a usar como perfil de marca.";
         chatBox.appendChild(welcome);
       }
 
@@ -1389,11 +1387,23 @@
 
         if (isTxt) {
           setStatus("Leyendo archivo TXT...");
-          manualProfile = await file.text();
+          const rawText = await file.text();
 
-          if (!manualProfile || manualProfile.length < 20) {
+          if (!rawText || rawText.length < 20) {
             throw new Error("El TXT tiene muy poco contenido para analizar");
           }
+
+          setStatus("Analizando TXT con IA...");
+
+          const analyzed = await analyzeTextBrand({
+            aiConfig,
+            brandName,
+            manualText: rawText
+          });
+
+          manualProfile = analyzed.brandProfile;
+
+          setStatus("✅ Manual TXT analizado correctamente");
         }
 
         if (isPdf) {
@@ -1404,12 +1414,12 @@
           });
 
           manualProfile = analyzed.brandProfile;
-          setStatus(`✅ Manual analizado: ${analyzed.analyzedPageCount}/${analyzed.originalPageCount} páginas`);
+          setStatus(`✅ Manual PDF analizado: ${analyzed.analyzedPageCount}/${analyzed.originalPageCount} páginas`);
         }
 
         currentProfile = `
 ${currentProfile ? currentProfile + "\n\n" : ""}
-INFORMACIÓN EXTRAÍDA DEL MANUAL DE MARCA:
+INFORMACIÓN EXTRAÍDA Y ANALIZADA DEL MANUAL DE MARCA:
 ${manualProfile}
 `.trim();
 
@@ -1417,14 +1427,15 @@ ${manualProfile}
 
         chatMessages.push({
           role: "assistant",
-          content: "Perfecto, ya sumé esa información al perfil de marca. Ahora contame qué querés generar: ¿producto, servicio, campaña, evento o marca institucional?"
+          content: "Perfecto, ya analicé el manual y lo convertí en un perfil de marca optimizado. Ahora puedo usarlo para ayudarte a definir la imagen. ¿Qué pieza querés generar?"
         });
 
         localStorage.setItem("brandChatMessages", JSON.stringify(chatMessages));
 
         renderAll();
 
-        alert("✅ Manual sumado al perfil");
+        setStatus("✅ Manual analizado correctamente y sumado al perfil");
+        alert("✅ Manual analizado y sumado al perfil");
 
       } catch (error) {
         console.error(error);
@@ -1434,6 +1445,38 @@ ${manualProfile}
         uploadBtn.disabled = false;
         uploadBtn.textContent = "➕ Analizar manual";
       }
+    }
+
+    async function analyzeTextBrand({ aiConfig, brandName, manualText }) {
+      const response = await fetch("/api/analyze-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          aiConfig,
+          brandName,
+          manualText
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.log("Error completo al analizar TXT:", data);
+        throw new Error(`${data.error}${data.model ? " | Modelo: " + data.model : ""}`);
+      }
+
+      if (!data.brandProfile) {
+        console.log("Respuesta completa al analizar TXT:", data);
+        throw new Error("La API analizó el TXT, pero no devolvió un perfil de marca");
+      }
+
+      return {
+        brandProfile: data.brandProfile,
+        provider: data.provider,
+        model: data.model
+      };
     }
 
     async function convertPDFToImages(file) {
@@ -1762,7 +1805,7 @@ ${manualProfile}
         generateBtn.textContent = "⏳ Generando imagen...";
 
         const referencesSummary = visualAssets.length > 0
-          ? `El usuario cargó ${visualAssets.length} imágenes de referencia. No copies elementos exactos si el proveedor no soporta imagen de referencia, pero interpretá que existen referencias visuales de producto, logo, packaging o estilo.`
+          ? `El usuario cargó ${visualAssets.length} imágenes de referencia. Si el proveedor no soporta imagen de referencia directa, usá este dato solo como contexto.`
           : "No se adjuntaron imágenes de referencia.";
 
         const systemPrompt = `
