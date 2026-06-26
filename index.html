@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Generador de Imagen por Marca</title>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <style>
     * {
       margin: 0;
@@ -157,6 +159,7 @@
       color: #6b7280;
       margin-top: -4px;
       margin-bottom: 12px;
+      line-height: 1.4;
     }
 
     .brand-item {
@@ -209,6 +212,33 @@
     .brand-delete:hover {
       background: transparent;
       color: #ef4444;
+    }
+
+    .status-box {
+      display: none;
+      background: #fff7ed;
+      border: 1px solid #fb923c;
+      color: #9a3412;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    .profile-box {
+      display: none;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #374151;
     }
 
     .result {
@@ -270,7 +300,7 @@
 
     <div class="header">
       <h1>🎨 Generador de Imagen por Marca</h1>
-      <p>Subí un manual de marca y generá imágenes respetando su identidad visual</p>
+      <p>Subí un manual de marca en PDF o TXT y generá imágenes respetando su identidad visual</p>
     </div>
 
     <div id="setupBox" class="setup-box" style="display: none;">
@@ -292,15 +322,21 @@
 
         <input type="text" id="brandName" placeholder="Nombre de la marca" />
 
-        <input type="file" id="brandFile" accept=".txt" />
+        <input type="file" id="brandFile" accept=".txt,.pdf" />
+
         <div class="small-warning">
-          Por ahora subí solo archivos .txt. Después sumamos PDF real.
+          Podés subir .txt o .pdf. Si el PDF está hecho con imágenes, la app convierte sus páginas en imágenes y Gemini analiza visualmente el manual.
+          Para evitar errores, por ahora analiza hasta 10 páginas.
         </div>
 
-        <button onclick="uploadBrand()">➕ Subir manual</button>
+        <button id="uploadBtn" onclick="uploadBrand()">➕ Subir y analizar manual</button>
+
+        <div id="statusBox" class="status-box"></div>
 
         <div class="info" id="brandCount">👆 Subí tu primer manual</div>
         <div id="brandsList"></div>
+
+        <div id="profileBox" class="profile-box"></div>
       </div>
 
       <div class="card">
@@ -364,6 +400,10 @@
     let lastImageUrl = "";
     let lastMimeType = "image/png";
 
+    const MAX_PDF_PAGES = 10;
+    const PDF_RENDER_SCALE = 1.35;
+    const PDF_IMAGE_QUALITY = 0.78;
+
     document.addEventListener("DOMContentLoaded", () => {
       const apiKey = localStorage.getItem("geminiApiKey");
 
@@ -387,27 +427,180 @@
       alert("✅ API Key guardada");
     }
 
-    function uploadBrand() {
+    function setStatus(message) {
+      const statusBox = document.getElementById("statusBox");
+      statusBox.style.display = "block";
+      statusBox.textContent = message;
+    }
+
+    function clearStatus() {
+      const statusBox = document.getElementById("statusBox");
+      statusBox.style.display = "none";
+      statusBox.textContent = "";
+    }
+
+    function showSelectedBrandProfile() {
+      const profileBox = document.getElementById("profileBox");
+
+      if (!selectedBrand) {
+        profileBox.style.display = "none";
+        profileBox.textContent = "";
+        return;
+      }
+
+      const brand = brands.find((b) => b.id === selectedBrand);
+
+      if (!brand || !brand.content) {
+        profileBox.style.display = "none";
+        profileBox.textContent = "";
+        return;
+      }
+
+      profileBox.style.display = "block";
+      profileBox.textContent = brand.content;
+    }
+
+    async function convertPDFToImages(file) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      const totalPages = Math.min(pdf.numPages, MAX_PDF_PAGES);
+      const pages = [];
+
+      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        setStatus(`Convirtiendo PDF en imágenes... Página ${pageNumber} de ${totalPages}`);
+
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: PDF_RENDER_SCALE });
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+        const dataUrl = canvas.toDataURL("image/jpeg", PDF_IMAGE_QUALITY);
+        const base64 = dataUrl.split(",")[1];
+
+        pages.push({
+          pageNumber,
+          mimeType: "image/jpeg",
+          data: base64
+        });
+      }
+
+      return {
+        pages,
+        originalPageCount: pdf.numPages,
+        analyzedPageCount: totalPages
+      };
+    }
+
+    async function analyzePDFBrand({ apiKey, brandName, file }) {
+      const pdfData = await convertPDFToImages(file);
+
+      setStatus(`Analizando visualmente el manual con Gemini... Esto puede tardar unos segundos.`);
+
+      const response = await fetch("/api/analyze-brand", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          apiKey,
+          brandName,
+          pages: pdfData.pages
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.log("Error completo al analizar manual:", data);
+        throw new Error(data.error);
+      }
+
+      if (!data.brandProfile) {
+        console.log("Respuesta completa al analizar manual:", data);
+        throw new Error("La API analizó el PDF, pero no devolvió un perfil de marca");
+      }
+
+      return {
+        brandProfile: data.brandProfile,
+        originalPageCount: pdfData.originalPageCount,
+        analyzedPageCount: pdfData.analyzedPageCount
+      };
+    }
+
+    async function uploadBrand() {
       const name = document.getElementById("brandName").value.trim();
       const file = document.getElementById("brandFile").files[0];
+      const apiKey = localStorage.getItem("geminiApiKey");
+      const uploadBtn = document.getElementById("uploadBtn");
 
       if (!name || !file) {
-        alert("Escribí el nombre de la marca y seleccioná un archivo .txt");
+        alert("Escribí el nombre de la marca y seleccioná un archivo .txt o .pdf");
         return;
       }
 
-      if (!file.name.toLowerCase().endsWith(".txt")) {
-        alert("Por ahora solo se permiten archivos .txt");
+      if (!apiKey) {
+        alert("Configurá tu API Key primero");
+        document.getElementById("setupBox").style.display = "block";
         return;
       }
 
-      const reader = new FileReader();
+      const fileName = file.name.toLowerCase();
+      const isTxt = fileName.endsWith(".txt");
+      const isPdf = fileName.endsWith(".pdf");
 
-      reader.onload = (e) => {
+      if (!isTxt && !isPdf) {
+        alert("Solo se permiten archivos .txt o .pdf");
+        return;
+      }
+
+      try {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "⏳ Procesando manual...";
+        clearStatus();
+
+        let content = "";
+        let fileType = isPdf ? "PDF" : "TXT";
+        let extraInfo = "";
+
+        if (isTxt) {
+          setStatus("Leyendo archivo TXT...");
+          content = await file.text();
+
+          if (!content || content.length < 20) {
+            throw new Error("El TXT tiene muy poco contenido para analizar");
+          }
+        }
+
+        if (isPdf) {
+          const analyzed = await analyzePDFBrand({
+            apiKey,
+            brandName: name,
+            file
+          });
+
+          content = analyzed.brandProfile;
+          extraInfo = ` · ${analyzed.analyzedPageCount}/${analyzed.originalPageCount} páginas analizadas`;
+        }
+
         const brand = {
           id: Date.now(),
           name: name,
-          content: e.target.result,
+          content: content,
+          fileType: fileType,
+          extraInfo: extraInfo,
           date: new Date().toLocaleDateString()
         };
 
@@ -420,10 +613,17 @@
         selectedBrand = brand.id;
         renderBrands();
 
-        alert(`✅ Manual "${name}" subido`);
-      };
+        setStatus(`✅ Manual "${name}" procesado correctamente${extraInfo}`);
+        alert(`✅ Manual "${name}" subido y analizado correctamente`);
 
-      reader.readAsText(file);
+      } catch (error) {
+        console.error("Error procesando manual:", error);
+        setStatus(`❌ Error: ${error.message}`);
+        alert(`Error: ${error.message}`);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "➕ Subir y analizar manual";
+      }
     }
 
     function deleteBrand(id) {
@@ -460,7 +660,7 @@
         div.innerHTML = `
           <div class="brand-item-content">
             <div class="brand-name">${brand.name}</div>
-            <div class="brand-date">${brand.date}</div>
+            <div class="brand-date">${brand.date} · ${brand.fileType || "TXT"}${brand.extraInfo || ""}</div>
           </div>
           <button class="brand-delete" onclick="event.stopPropagation(); deleteBrand(${brand.id})">🗑️</button>
         `;
@@ -469,6 +669,7 @@
       });
 
       document.getElementById("generateBtn").disabled = !selectedBrand;
+      showSelectedBrandProfile();
     }
 
     async function generateContent() {
@@ -510,7 +711,7 @@ Actuá como director creativo, diseñador gráfico senior y especialista en bran
 
 Tenés que generar una imagen visual lista para usar en redes sociales o publicidad digital.
 
-Manual o resumen de identidad de marca:
+Perfil de marca procesado:
 
 ${brand.content}
 
@@ -544,8 +745,8 @@ Indicaciones de diseño:
 - No agregues textos pequeños imposibles de leer.
 
 Formato:
-- Si es historia de Instagram, priorizá composición vertical.
-- Si es post de Instagram, priorizá composición cuadrada.
+- Si es historia de Instagram, priorizá composición vertical 9:16.
+- Si es post de Instagram, priorizá composición cuadrada 1:1.
 - Si es banner web, priorizá composición horizontal.
 `;
 
