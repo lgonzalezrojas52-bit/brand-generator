@@ -63,52 +63,106 @@ async function generateWithPollinations({
   width,
   height
 }) {
-  const encodedPrompt = encodeURIComponent(prompt);
+  const cleanPrompt = String(prompt || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 8000);
 
-  const params = new URLSearchParams({
-    model: model || "flux",
-    width: String(width || 1024),
-    height: String(height || 1024),
-    seed: "-1",
-    safe: "true"
-  });
+  const size = `${width || 1024}x${height || 1024}`;
 
-  const url = `https://gen.pollinations.ai/image/${encodedPrompt}?${params.toString()}`;
-
-  const headers = {};
+  const headers = {
+    "Content-Type": "application/json"
+  };
 
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers
+  const response = await fetch("https://gen.pollinations.ai/v1/images/generations", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      prompt: cleanPrompt,
+      model: model || "flux",
+      n: 1,
+      size,
+      quality: "medium",
+      response_format: "b64_json",
+      safe: true
+    })
+  });
+
+  const data = await response.json().catch(async () => {
+    const text = await response.text();
+    return {
+      error: {
+        message: text
+      }
+    };
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-
     return res.status(response.status).json({
-      error: errorText || "Error generando imagen con Pollinations",
+      error: data.error?.message || "Error generando imagen con Pollinations",
       provider: "pollinations",
       model,
-      url
+      raw: data
     });
   }
 
-  const contentType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const base64Image = buffer.toString("base64");
+  const image =
+    data?.data?.[0]?.b64_json ||
+    data?.data?.[0]?.b64 ||
+    data?.b64_json ||
+    null;
 
-  return res.status(200).json({
-    text: "Imagen generada con Pollinations.",
-    image: base64Image,
-    mimeType: contentType,
+  const imageUrl =
+    data?.data?.[0]?.url ||
+    data?.url ||
+    null;
+
+  if (image) {
+    return res.status(200).json({
+      text: "Imagen generada con Pollinations.",
+      image,
+      mimeType: "image/png",
+      provider: "pollinations",
+      model
+    });
+  }
+
+  if (imageUrl) {
+    const imageResponse = await fetch(imageUrl);
+
+    if (!imageResponse.ok) {
+      return res.status(500).json({
+        error: "Pollinations devolvió URL, pero no se pudo descargar la imagen",
+        provider: "pollinations",
+        model,
+        imageUrl
+      });
+    }
+
+    const contentType = imageResponse.headers.get("content-type") || "image/png";
+    const arrayBuffer = await imageResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString("base64");
+
+    return res.status(200).json({
+      text: "Imagen generada con Pollinations.",
+      image: base64Image,
+      mimeType: contentType,
+      provider: "pollinations",
+      model,
+      imageUrl
+    });
+  }
+
+  return res.status(500).json({
+    error: "Pollinations respondió, pero no devolvió imagen",
     provider: "pollinations",
     model,
-    url
+    raw: data
   });
 }
 
@@ -118,7 +172,7 @@ async function generateWithGemini({
   aiConfig,
   referenceImages
 }) {
-  const apiKey = aiConfig?.apiKey || aiConfig?.imageApiKey || "";
+  const apiKey = aiConfig?.imageApiKey || aiConfig?.apiKey || "";
   const model = aiConfig?.imageModel || "gemini-3.1-flash-image";
 
   if (!apiKey) {
