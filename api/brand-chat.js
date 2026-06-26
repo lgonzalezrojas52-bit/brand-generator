@@ -13,8 +13,8 @@ export default async function handler(req, res) {
     messages
   } = req.body;
 
-  const finalApiKey = aiConfig?.apiKey || apiKey;
-  const provider = aiConfig?.provider || "gemini";
+  const provider = aiConfig?.textProvider || aiConfig?.provider || "gemini";
+  const finalApiKey = aiConfig?.textApiKey || aiConfig?.apiKey || apiKey;
   const textModel = aiConfig?.textModel || "gemini-2.5-flash";
 
   if (!finalApiKey) {
@@ -32,12 +32,6 @@ export default async function handler(req, res) {
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({
       error: "No se recibieron mensajes"
-    });
-  }
-
-  if (provider !== "gemini") {
-    return res.status(400).json({
-      error: "Por ahora el chat de marca solo soporta Gemini. Después sumamos OpenAI."
     });
   }
 
@@ -161,55 +155,36 @@ Devolvé ÚNICAMENTE un JSON válido con esta estructura exacta:
   "readyToGenerate": false
 }
 
-Definiciones:
-- detectedType: clasificá lo que el usuario quiere trabajar.
-- needsVisualAssets: true si conviene pedir fotos/capturas/referencias.
-- assetRequests: lista de archivos visuales que sería útil pedir.
-- missingInfo: datos que faltan para generar bien.
-- nextQuestion: una sola pregunta clara para avanzar.
-- readyToGenerate: true o false según si ya se puede generar.
+No agregues markdown.
+No agregues explicación fuera del JSON.
+No uses bloque de código.
 `;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${finalApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ]
-        })
-      }
-    );
+    let rawText = "";
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "Error en Gemini",
-        provider,
+    if (provider === "gemini") {
+      rawText = await callGeminiText({
+        apiKey: finalApiKey,
         model: textModel,
-        raw: data
+        prompt
+      });
+    } else if (provider === "groq") {
+      rawText = await callGroqText({
+        apiKey: finalApiKey,
+        model: textModel,
+        prompt
+      });
+    } else {
+      return res.status(400).json({
+        error: `Proveedor no soportado todavía: ${provider}`
       });
     }
 
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!rawText) {
       return res.status(500).json({
-        error: "Gemini respondió, pero no devolvió texto",
+        error: "La IA respondió, pero no devolvió texto",
         provider,
-        model: textModel,
-        raw: data
+        model: textModel
       });
     }
 
@@ -227,7 +202,9 @@ Definiciones:
       parsed = JSON.parse(cleanedText);
     } catch (jsonError) {
       return res.status(500).json({
-        error: "Gemini respondió, pero no devolvió un JSON válido",
+        error: "La IA respondió, pero no devolvió un JSON válido",
+        provider,
+        model: textModel,
         rawText
       });
     }
@@ -250,4 +227,70 @@ Definiciones:
       error: error.message
     });
   }
+}
+
+async function callGeminiText({ apiKey, model, prompt }) {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ]
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Error en Gemini");
+  }
+
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+}
+
+async function callGroqText({ apiKey, model, prompt }) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "system",
+          content: "Respondé únicamente JSON válido. No uses markdown. No agregues explicación fuera del JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.4,
+      response_format: {
+        type: "json_object"
+      }
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Error en Groq");
+  }
+
+  return data?.choices?.[0]?.message?.content || "";
 }
