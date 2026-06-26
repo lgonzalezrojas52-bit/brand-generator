@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const { prompt, apiKey } = req.body;
+  const { prompt, apiKey, referenceImage } = req.body;
 
   if (!prompt) {
     return res.status(400).json({
@@ -20,6 +20,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    const parts = [
+      {
+        text: prompt
+      }
+    ];
+
+    if (referenceImage && referenceImage.data) {
+      parts.push({
+        inlineData: {
+          mimeType: referenceImage.mimeType || "image/png",
+          data: referenceImage.data
+        }
+      });
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
@@ -30,11 +45,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
+              parts
             }
           ],
           generationConfig: {
@@ -53,13 +64,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const responseParts = data?.candidates?.[0]?.content?.parts || [];
 
     let text = "";
     let image = null;
     let mimeType = "image/png";
 
-    for (const part of parts) {
+    for (const part of responseParts) {
       if (part.text) {
         text += part.text;
       }
