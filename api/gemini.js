@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -43,7 +43,18 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json(data);
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!text) {
+      return res.status(500).json({
+        error: 'Gemini respondió, pero no devolvió texto',
+        raw: data
+      });
+    }
+
+    return res.status(200).json({
+      text
+    });
 
   } catch (error) {
     return res.status(500).json({
