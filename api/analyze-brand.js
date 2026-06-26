@@ -5,9 +5,18 @@ export default async function handler(req, res) {
     });
   }
 
-  const { apiKey, brandName, pages } = req.body;
+  const {
+    apiKey,
+    aiConfig,
+    brandName,
+    pages
+  } = req.body;
 
-  if (!apiKey) {
+  const finalApiKey = aiConfig?.apiKey || apiKey;
+  const provider = aiConfig?.provider || "gemini";
+  const textModel = aiConfig?.textModel || "gemini-2.5-flash";
+
+  if (!finalApiKey) {
     return res.status(400).json({
       error: "Falta la API Key"
     });
@@ -22,6 +31,12 @@ export default async function handler(req, res) {
   if (!pages || !Array.isArray(pages) || pages.length === 0) {
     return res.status(400).json({
       error: "No se recibieron páginas del manual"
+    });
+  }
+
+  if (provider !== "gemini") {
+    return res.status(400).json({
+      error: "Por ahora el análisis de manual solo soporta Gemini. Después sumamos OpenAI."
     });
   }
 
@@ -113,7 +128,7 @@ Devolvé el perfil con esta estructura:
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${finalApiKey}`,
       {
         method: "POST",
         headers: {
@@ -134,6 +149,8 @@ Devolvé el perfil con esta estructura:
     if (!response.ok) {
       return res.status(response.status).json({
         error: data.error?.message || "Error analizando el manual de marca",
+        provider,
+        model: textModel,
         raw: data
       });
     }
@@ -143,12 +160,16 @@ Devolvé el perfil con esta estructura:
     if (!brandProfile) {
       return res.status(500).json({
         error: "Gemini analizó el manual, pero no devolvió un perfil de marca",
+        provider,
+        model: textModel,
         raw: data
       });
     }
 
     return res.status(200).json({
-      brandProfile
+      brandProfile,
+      provider,
+      model: textModel
     });
 
   } catch (error) {
