@@ -12,7 +12,6 @@
     :root {
       --bg: #070a12;
       --card: rgba(255, 255, 255, 0.075);
-      --card-2: rgba(255, 255, 255, 0.11);
       --line: rgba(255, 255, 255, 0.14);
       --line-2: rgba(255, 255, 255, 0.24);
       --text: #f8fafc;
@@ -26,7 +25,6 @@
       --red: #ef4444;
       --radius-xl: 28px;
       --radius-lg: 20px;
-      --radius-md: 14px;
       --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
       --blur: blur(22px);
     }
@@ -105,6 +103,7 @@
       place-items: center;
       box-shadow: 0 10px 30px rgba(79, 124, 255, 0.32);
       flex: 0 0 auto;
+      font-weight: 900;
     }
 
     .brand-title {
@@ -204,29 +203,6 @@
       color: var(--muted);
       font-size: 13px;
       font-weight: 800;
-    }
-
-    .setup-box {
-      display: none;
-      margin-bottom: 22px;
-      padding: 18px;
-      border-radius: var(--radius-lg);
-      background: rgba(79, 124, 255, 0.12);
-      border: 1px solid rgba(79, 124, 255, 0.28);
-      backdrop-filter: var(--blur);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.24);
-    }
-
-    .setup-box p {
-      color: #dbeafe;
-      font-weight: 800;
-      margin-bottom: 12px;
-    }
-
-    .setup-box a {
-      color: #93c5fd;
-      text-decoration: none;
-      font-weight: 900;
     }
 
     .layout {
@@ -409,9 +385,10 @@
       box-shadow: none;
     }
 
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.12);
-      box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      box-shadow: none;
     }
 
     .status {
@@ -698,7 +675,7 @@
 
       <div class="pill-status">
         <span>●</span>
-        Gemini conectado
+        IA configurable
       </div>
     </nav>
 
@@ -709,32 +686,68 @@
       </h1>
       <p>
         Cargá el manual, hablá con el asistente de marca, subí fotos de producto o referencias cuando haga falta
-        y generá piezas visuales más coherentes.
+        y elegí qué API/modelo usar para generar las piezas.
       </p>
 
       <div class="hero-tags">
+        <div class="hero-tag">API configurable</div>
         <div class="hero-tag">Chat estratégico</div>
         <div class="hero-tag">Pide fotos según el caso</div>
         <div class="hero-tag">PDF visual compatible</div>
-        <div class="hero-tag">Generación de imagen</div>
       </div>
-    </section>
-
-    <section id="setupBox" class="setup-box">
-      <p>⚠️ Necesitás tu API Key de Google Gemini</p>
-      <input type="password" id="apiKey" placeholder="Pegá tu API Key: AIza..." />
-      <p style="font-size: 12px; color: rgba(248,250,252,0.62); margin-bottom: 12px;">
-        Podés obtenerla en:
-        <a href="https://aistudio.google.com/app/apikey" target="_blank">
-          aistudio.google.com/app/apikey
-        </a>
-      </p>
-      <button onclick="saveApiKey()">Guardar API Key</button>
     </section>
 
     <section class="layout">
 
       <div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="eyebrow">Configuración</div>
+            <div class="panel-title">⚙️ Proveedor de IA</div>
+          </div>
+
+          <div class="panel-body">
+            <div class="field">
+              <label>Proveedor <small>por ahora Gemini</small></label>
+              <select id="aiProvider">
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>API Key <small>se guarda localmente</small></label>
+              <input type="password" id="aiApiKey" placeholder="Pegá tu API Key" />
+            </div>
+
+            <div class="field">
+              <label>Modelo de texto <small>chat y análisis</small></label>
+              <select id="textModel">
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                <option value="gemini-flash-latest">gemini-flash-latest</option>
+                <option value="gemini-pro-latest">gemini-pro-latest</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Modelo de imagen <small>generación visual</small></label>
+              <select id="imageModel">
+                <option value="gemini-3.1-flash-image">gemini-3.1-flash-image</option>
+                <option value="gemini-3-pro-image">gemini-3-pro-image</option>
+                <option value="gemini-3-pro-image-preview">gemini-3-pro-image-preview</option>
+                <option value="gemini-2.5-flash-image">gemini-2.5-flash-image</option>
+              </select>
+            </div>
+
+            <button onclick="saveAIConfig()">Guardar configuración</button>
+
+            <div class="hint" style="margin-top: 14px;">
+              Si un modelo de imagen falla por permisos o billing, podés probar otro sin tocar código.
+            </div>
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-head">
             <div class="eyebrow">Etapa 1</div>
@@ -868,6 +881,10 @@
             </div>
 
             <button id="generateBtn" onclick="generateContent()">🎨 Generar imagen</button>
+
+            <button class="btn-danger" style="margin-top: 12px;" onclick="clearProjectData()">
+              Borrar datos del proyecto
+            </button>
           </div>
         </div>
       </div>
@@ -894,7 +911,7 @@
     </section>
 
     <div class="footer-note">
-      Los datos se guardan localmente en tu navegador. Para uso profesional, después conviene sumar base de datos y API Key protegida.
+      La API Key, el perfil de marca y las imágenes se guardan localmente en tu navegador.
     </div>
 
   </main>
@@ -919,26 +936,47 @@
     const MAX_REFERENCE_IMAGES_TO_SEND = 6;
 
     document.addEventListener("DOMContentLoaded", () => {
-      const apiKey = localStorage.getItem("geminiApiKey");
-
-      if (!apiKey) {
-        document.getElementById("setupBox").style.display = "block";
-      }
-
+      loadAIConfigIntoForm();
       renderAll();
     });
 
-    function saveApiKey() {
-      const apiKey = document.getElementById("apiKey").value.trim();
+    function getAIConfig() {
+      const saved = JSON.parse(localStorage.getItem("aiConfig") || "{}");
 
-      if (!apiKey) {
-        alert("Pegá tu API Key primero");
+      return {
+        provider: saved.provider || "gemini",
+        apiKey: saved.apiKey || localStorage.getItem("geminiApiKey") || "",
+        textModel: saved.textModel || "gemini-2.5-flash",
+        imageModel: saved.imageModel || "gemini-3.1-flash-image"
+      };
+    }
+
+    function loadAIConfigIntoForm() {
+      const config = getAIConfig();
+
+      document.getElementById("aiProvider").value = config.provider;
+      document.getElementById("aiApiKey").value = config.apiKey;
+      document.getElementById("textModel").value = config.textModel;
+      document.getElementById("imageModel").value = config.imageModel;
+    }
+
+    function saveAIConfig() {
+      const config = {
+        provider: document.getElementById("aiProvider").value,
+        apiKey: document.getElementById("aiApiKey").value.trim(),
+        textModel: document.getElementById("textModel").value,
+        imageModel: document.getElementById("imageModel").value
+      };
+
+      if (!config.apiKey) {
+        alert("Pegá una API Key primero");
         return;
       }
 
-      localStorage.setItem("geminiApiKey", apiKey);
-      document.getElementById("setupBox").style.display = "none";
-      alert("✅ API Key guardada");
+      localStorage.setItem("aiConfig", JSON.stringify(config));
+      localStorage.setItem("geminiApiKey", config.apiKey);
+
+      alert("✅ Configuración guardada");
     }
 
     function getBrandName() {
@@ -1077,7 +1115,7 @@
     async function uploadManual() {
       const brandName = getBrandName();
       const file = document.getElementById("brandFile").files[0];
-      const apiKey = localStorage.getItem("geminiApiKey");
+      const aiConfig = getAIConfig();
       const uploadBtn = document.getElementById("uploadBtn");
 
       if (!brandName) {
@@ -1090,9 +1128,8 @@
         return;
       }
 
-      if (!apiKey) {
-        alert("Configurá tu API Key primero");
-        document.getElementById("setupBox").style.display = "block";
+      if (!aiConfig.apiKey) {
+        alert("Guardá una API Key en la configuración primero");
         return;
       }
 
@@ -1125,7 +1162,7 @@
 
         if (isPdf) {
           const analyzed = await analyzePDFBrand({
-            apiKey,
+            aiConfig,
             brandName,
             file
           });
@@ -1143,6 +1180,7 @@ ${manualProfile}
         localStorage.setItem("brandProfile", currentProfile);
 
         const assistantMessage = "Perfecto, ya analicé el manual y sumé esa información al perfil de marca. Ahora contame qué querés generar: ¿producto, servicio, campaña, evento o marca institucional?";
+
         chatMessages.push({
           role: "assistant",
           content: assistantMessage
@@ -1208,10 +1246,10 @@ ${manualProfile}
       };
     }
 
-    async function analyzePDFBrand({ apiKey, brandName, file }) {
+    async function analyzePDFBrand({ aiConfig, brandName, file }) {
       const pdfData = await convertPDFToImages(file);
 
-      setStatus("Analizando visualmente el manual con Gemini...");
+      setStatus("Analizando visualmente el manual con IA...");
 
       const response = await fetch("/api/analyze-brand", {
         method: "POST",
@@ -1219,7 +1257,7 @@ ${manualProfile}
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          apiKey,
+          aiConfig,
           brandName,
           pages: pdfData.pages
         })
@@ -1246,7 +1284,7 @@ ${manualProfile}
 
     async function sendBrandChat() {
       const brandName = getBrandName();
-      const apiKey = localStorage.getItem("geminiApiKey");
+      const aiConfig = getAIConfig();
       const input = document.getElementById("chatInput");
       const chatBtn = document.getElementById("chatBtn");
       const message = input.value.trim();
@@ -1256,9 +1294,8 @@ ${manualProfile}
         return;
       }
 
-      if (!apiKey) {
-        alert("Configurá tu API Key primero");
-        document.getElementById("setupBox").style.display = "block";
+      if (!aiConfig.apiKey) {
+        alert("Guardá una API Key en la configuración primero");
         return;
       }
 
@@ -1287,7 +1324,7 @@ ${manualProfile}
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            apiKey,
+            aiConfig,
             brandName,
             currentProfile,
             messages: chatMessages
@@ -1414,7 +1451,7 @@ ${manualProfile}
 
     async function generateContent() {
       const brandName = getBrandName();
-      const apiKey = localStorage.getItem("geminiApiKey");
+      const aiConfig = getAIConfig();
       const userPrompt = document.getElementById("prompt").value.trim();
       const contentType = document.getElementById("contentType").value;
       const imageText = document.getElementById("imageText").value.trim();
@@ -1426,9 +1463,8 @@ ${manualProfile}
         return;
       }
 
-      if (!apiKey) {
-        alert("Configurá tu API Key primero");
-        document.getElementById("setupBox").style.display = "block";
+      if (!aiConfig.apiKey) {
+        alert("Guardá una API Key en la configuración primero");
         return;
       }
 
@@ -1509,7 +1545,7 @@ Formato:
           },
           body: JSON.stringify({
             prompt: systemPrompt,
-            apiKey,
+            aiConfig,
             referenceImages
           })
         });
@@ -1518,7 +1554,7 @@ Formato:
 
         if (data.error) {
           console.log("Error generación:", data);
-          throw new Error(data.error);
+          throw new Error(`${data.error}${data.model ? " | Modelo: " + data.model : ""}`);
         }
 
         if (!data.image) {
@@ -1587,6 +1623,35 @@ Formato:
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+    }
+
+    function clearProjectData() {
+      if (!confirm("¿Borrar perfil, chat e imágenes cargadas de este navegador?")) return;
+
+      localStorage.removeItem("brandProfile");
+      localStorage.removeItem("brandChatMessages");
+      localStorage.removeItem("visualAssets");
+      localStorage.removeItem("detectedType");
+      localStorage.removeItem("readyToGenerate");
+      localStorage.removeItem("assetRequests");
+      localStorage.removeItem("brandName");
+
+      currentProfile = "";
+      chatMessages = [];
+      visualAssets = [];
+      detectedType = "no especificado";
+      readyToGenerate = false;
+      assetRequests = [];
+
+      document.getElementById("brandName").value = "";
+      document.getElementById("visibleBrandName").value = "";
+      document.getElementById("prompt").value = "";
+      document.getElementById("imageText").value = "";
+      document.getElementById("resultDiv").style.display = "none";
+
+      renderAll();
+
+      alert("✅ Datos del proyecto borrados");
     }
   </script>
 </body>
