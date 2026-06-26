@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const { prompt, apiKey, referenceImage } = req.body;
+  const { prompt, apiKey, referenceImage, referenceImages } = req.body;
 
   if (!prompt) {
     return res.status(400).json({
@@ -20,13 +20,26 @@ export default async function handler(req, res) {
   }
 
   try {
+    const MODEL = "gemini-3.1-flash-image";
+
     const parts = [
       {
         text: prompt
       }
     ];
 
-    if (referenceImage && referenceImage.data) {
+    if (Array.isArray(referenceImages) && referenceImages.length > 0) {
+      referenceImages.forEach((img) => {
+        if (img && img.data) {
+          parts.push({
+            inlineData: {
+              mimeType: img.mimeType || "image/png",
+              data: img.data
+            }
+          });
+        }
+      });
+    } else if (referenceImage && referenceImage.data) {
       parts.push({
         inlineData: {
           mimeType: referenceImage.mimeType || "image/png",
@@ -36,7 +49,7 @@ export default async function handler(req, res) {
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
@@ -60,6 +73,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       return res.status(response.status).json({
         error: data.error?.message || "Error en Gemini",
+        model: MODEL,
         raw: data
       });
     }
@@ -84,6 +98,7 @@ export default async function handler(req, res) {
     if (!image) {
       return res.status(500).json({
         error: "Gemini respondió, pero no devolvió imagen",
+        model: MODEL,
         raw: data
       });
     }
@@ -91,7 +106,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       text,
       image,
-      mimeType
+      mimeType,
+      model: MODEL
     });
 
   } catch (error) {
