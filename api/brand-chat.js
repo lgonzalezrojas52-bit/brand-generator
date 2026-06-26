@@ -5,9 +5,19 @@ export default async function handler(req, res) {
     });
   }
 
-  const { apiKey, brandName, currentProfile, messages } = req.body;
+  const {
+    apiKey,
+    aiConfig,
+    brandName,
+    currentProfile,
+    messages
+  } = req.body;
 
-  if (!apiKey) {
+  const finalApiKey = aiConfig?.apiKey || apiKey;
+  const provider = aiConfig?.provider || "gemini";
+  const textModel = aiConfig?.textModel || "gemini-2.5-flash";
+
+  if (!finalApiKey) {
     return res.status(400).json({
       error: "Falta la API Key"
     });
@@ -22,6 +32,12 @@ export default async function handler(req, res) {
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({
       error: "No se recibieron mensajes"
+    });
+  }
+
+  if (provider !== "gemini") {
+    return res.status(400).json({
+      error: "Por ahora el chat de marca solo soporta Gemini. Después sumamos OpenAI."
     });
   }
 
@@ -155,7 +171,7 @@ Definiciones:
 `;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${finalApiKey}`,
       {
         method: "POST",
         headers: {
@@ -180,6 +196,8 @@ Definiciones:
     if (!response.ok) {
       return res.status(response.status).json({
         error: data.error?.message || "Error en Gemini",
+        provider,
+        model: textModel,
         raw: data
       });
     }
@@ -189,6 +207,8 @@ Definiciones:
     if (!rawText) {
       return res.status(500).json({
         error: "Gemini respondió, pero no devolvió texto",
+        provider,
+        model: textModel,
         raw: data
       });
     }
@@ -220,7 +240,9 @@ Definiciones:
       assetRequests: Array.isArray(parsed.assetRequests) ? parsed.assetRequests : [],
       missingInfo: Array.isArray(parsed.missingInfo) ? parsed.missingInfo : [],
       nextQuestion: parsed.nextQuestion || "",
-      readyToGenerate: Boolean(parsed.readyToGenerate)
+      readyToGenerate: Boolean(parsed.readyToGenerate),
+      provider,
+      model: textModel
     });
 
   } catch (error) {
