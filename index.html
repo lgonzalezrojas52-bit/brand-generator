@@ -724,20 +724,100 @@
       line-height: 1.5;
     }
 
-    @media (max-width: 640px) {
+    .mobile-tabs-row {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+      background: rgba(255, 255, 255, 0.45);
+      border: 1px solid var(--line);
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .mobile-tab-btn {
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+      box-shadow: none;
+      transition: 0.15s ease;
+      width: 100%;
+    }
+
+    .mobile-tab-btn:hover {
+      box-shadow: none;
+      transform: none;
+    }
+
+    .mobile-tab-btn.active {
+      background: white;
+      color: var(--blue);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.05);
+    }
+
+    @media (max-width: 768px) {
+      .mobile-tabs-row {
+        display: grid;
+      }
+      .two-col {
+        grid-template-columns: 1fr !important;
+      }
+
       .app {
-        padding: 16px 12px 42px;
+        padding: 12px 8px 32px;
       }
 
       .hero {
-        padding: 28px 20px;
+        padding: 18px 14px;
+        margin-bottom: 14px;
+      }
+
+      .hero-kicker {
+        padding: 6px 10px;
+        font-size: 10px;
+        margin-bottom: 10px;
+      }
+
+      .hero h1 {
+        font-size: 26px !important;
+        margin-bottom: 10px;
+      }
+
+      .hero p {
+        font-size: 13px !important;
+        line-height: 1.45;
+      }
+
+      .panel {
+        margin-bottom: 12px;
       }
 
       .panel-body,
       .panel-head,
       .result-body,
       .result-head {
-        padding: 16px;
+        padding: 12px;
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+
+      .chat-box {
+        height: 270px;
+        padding: 10px;
+        border-radius: 10px;
+      }
+
+      .profile-box {
+        max-height: 180px;
+        padding: 10px;
+        border-radius: 10px;
       }
 
       .result-buttons {
@@ -751,6 +831,10 @@
 
       .btn-row button {
         min-width: 100%;
+      }
+
+      .editor-layout {
+        gap: 12px !important;
       }
     }
   </style>
@@ -868,8 +952,13 @@
     </section>
 
     <section id="step2" class="step-section">
+      <div class="mobile-tabs-row" id="step2MobileTabs">
+        <button class="mobile-tab-btn active" id="btnTabChat" onclick="setStep2MobileTab('chat')">💬 Asistente y Chat</button>
+        <button class="mobile-tab-btn" id="btnTabProfile" onclick="setStep2MobileTab('profile')">🧠 Perfil de Marca</button>
+      </div>
+
       <div class="two-col">
-        <div>
+        <div id="colProfile">
           <div class="panel">
             <div class="panel-head">
               <div class="eyebrow">Etapa 2</div>
@@ -909,7 +998,7 @@
           </div>
         </div>
 
-        <div>
+        <div id="colChat">
           <div class="panel">
             <div class="panel-head">
               <div class="eyebrow">Chat estratégico</div>
@@ -1142,6 +1231,12 @@
         document.getElementById(`step${num}`).classList.toggle("active", num === step);
         document.getElementById(`stepPill${num}`).classList.toggle("active", num === step);
       });
+
+      if (step === 2) {
+        if (window.innerWidth <= 768) {
+          setStep2MobileTab("chat");
+        }
+      }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -2410,6 +2505,42 @@ Visual rules:
 
       alert("✅ Datos del proyecto borrados");
     }
+
+    function setStep2MobileTab(tab) {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) return;
+
+      const colProfile = document.getElementById("colProfile");
+      const colChat = document.getElementById("colChat");
+      const btnTabProfile = document.getElementById("btnTabProfile");
+      const btnTabChat = document.getElementById("btnTabChat");
+
+      if (tab === "chat") {
+        colChat.style.display = "block";
+        colProfile.style.display = "none";
+        btnTabChat.classList.add("active");
+        btnTabProfile.classList.remove("active");
+      } else {
+        colChat.style.display = "none";
+        colProfile.style.display = "block";
+        btnTabChat.classList.remove("active");
+        btnTabProfile.classList.add("active");
+      }
+    }
+
+    window.addEventListener("resize", () => {
+      const colProfile = document.getElementById("colProfile");
+      const colChat = document.getElementById("colChat");
+      if (!colProfile || !colChat) return;
+
+      if (window.innerWidth > 768) {
+        colProfile.style.display = "block";
+        colChat.style.display = "block";
+      } else {
+        const activeTab = document.getElementById("btnTabChat").classList.contains("active") ? "chat" : "profile";
+        setStep2MobileTab(activeTab);
+      }
+    });
   </script>
 </body>
 </html>
