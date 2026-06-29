@@ -867,14 +867,19 @@
               </div>
 
               <div class="field">
-                <label>Manual de marca <small>TXT recomendado con Groq</small></label>
+                <label>Manual de marca <small>TXT o PDF (opcional)</small></label>
                 <input type="file" id="brandFile" accept=".txt,.pdf" />
                 <div class="hint">
-                  TXT: se analiza con IA y se convierte en perfil optimizado. PDF visual funciona mejor con Gemini.
+                  TXT: se analiza con IA. PDF visual funciona mejor con Gemini u OpenAI.
                 </div>
               </div>
 
-              <button id="uploadBtn" onclick="uploadManual()">➕ Analizar manual</button>
+              <div class="field">
+                <label>Sitio Web de la Marca <small>Opcional (se analizará su contenido)</small></label>
+                <input type="text" id="brandWebsite" placeholder="Ej: https://mi-marca.com" />
+              </div>
+
+              <button id="uploadBtn" onclick="uploadManual()">➕ Analizar manual / web</button>
 
               <div id="statusBox" class="status"></div>
 
@@ -1429,6 +1434,7 @@
     async function uploadManual() {
       const brandName = getBrandName();
       const file = document.getElementById("brandFile").files[0];
+      const websiteUrl = document.getElementById("brandWebsite").value.trim();
       const aiConfig = getAIConfig();
       const uploadBtn = document.getElementById("uploadBtn");
 
@@ -1437,8 +1443,8 @@
         return;
       }
 
-      if (!file) {
-        alert("Seleccioná un manual .txt o .pdf");
+      if (!file && !websiteUrl) {
+        alert("Seleccioná un manual (.txt, .pdf) o ingresá un sitio web para analizar");
         return;
       }
 
@@ -1450,78 +1456,107 @@
 
       saveBrandName();
 
-      const fileName = file.name.toLowerCase();
-      const isTxt = fileName.endsWith(".txt");
-      const isPdf = fileName.endsWith(".pdf");
-
-      if (!isTxt && !isPdf) {
-        alert("Solo se permiten archivos .txt o .pdf");
-        return;
-      }
-
-      if (isPdf && aiConfig.textProvider !== "gemini") {
-        alert("El análisis visual de PDF requiere Gemini. Con Groq usá TXT o pegá la información en el chat.");
-        return;
-      }
-
       try {
         uploadBtn.disabled = true;
-        uploadBtn.textContent = "⏳ Analizando manual...";
+        uploadBtn.textContent = "⏳ Analizando manual / web...";
         clearStatus();
 
         let manualProfile = "";
+        let websiteProfile = "";
 
-        if (isTxt) {
-          setStatus("Leyendo archivo TXT...");
-          const rawText = await file.text();
+        // 1. Analizar archivo si se subió
+        if (file) {
+          const fileName = file.name.toLowerCase();
+          const isTxt = fileName.endsWith(".txt");
+          const isPdf = fileName.endsWith(".pdf");
 
-          if (!rawText || rawText.length < 20) {
-            throw new Error("El TXT tiene muy poco contenido para analizar");
+          if (!isTxt && !isPdf) {
+            alert("Solo se permiten archivos .txt o .pdf");
+            return;
           }
 
-          setStatus("Analizando TXT con IA...");
+          if (isPdf && aiConfig.textProvider !== "gemini" && aiConfig.textProvider !== "openai") {
+            alert("El análisis visual de PDF requiere Gemini u OpenAI. Con Groq usá TXT o la web.");
+            return;
+          }
 
-          const analyzed = await analyzeTextBrand({
-            aiConfig,
-            brandName,
-            manualText: rawText
-          });
+          if (isTxt) {
+            setStatus("Leyendo archivo TXT...");
+            const rawText = await file.text();
 
-          manualProfile = analyzed.brandProfile;
+            if (!rawText || rawText.length < 20) {
+              throw new Error("El TXT tiene muy poco contenido para analizar");
+            }
 
-          setStatus("✅ Manual TXT analizado correctamente");
+            setStatus("Analizando TXT con IA...");
+            const analyzed = await analyzeTextBrand({
+              aiConfig,
+              brandName,
+              manualText: rawText
+            });
+
+            manualProfile = analyzed.brandProfile;
+            setStatus("✅ Manual TXT analizado correctamente");
+          }
+
+          if (isPdf) {
+            setStatus("Procesando páginas de PDF...");
+            const analyzed = await analyzePDFBrand({
+              aiConfig,
+              brandName,
+              file
+            });
+
+            manualProfile = analyzed.brandProfile;
+            setStatus(`✅ Manual PDF analizado: ${analyzed.analyzedPageCount}/${analyzed.originalPageCount} páginas`);
+          }
         }
 
-        if (isPdf) {
-          const analyzed = await analyzePDFBrand({
+        // 2. Analizar sitio web si se ingresó
+        if (websiteUrl) {
+          setStatus("Extrayendo y analizando sitio web...");
+          const analyzedWeb = await analyzeWebsiteBrand({
             aiConfig,
             brandName,
-            file
+            url: websiteUrl
           });
 
-          manualProfile = analyzed.brandProfile;
-          setStatus(`✅ Manual PDF analizado: ${analyzed.analyzedPageCount}/${analyzed.originalPageCount} páginas`);
+          websiteProfile = analyzedWeb.brandProfile;
+          setStatus("✅ Sitio web analizado correctamente");
+        }
+
+        // Combinar perfiles
+        let finalProfilePiece = "";
+        if (manualProfile) {
+          finalProfilePiece += `ANÁLISIS DEL MANUAL DE MARCA:\n${manualProfile}`;
+        }
+        if (websiteProfile) {
+          if (finalProfilePiece) finalProfilePiece += "\n\n";
+          finalProfilePiece += `ANÁLISIS DEL SITIO WEB:\n${websiteProfile}`;
         }
 
         currentProfile = `
 ${currentProfile ? currentProfile + "\n\n" : ""}
-INFORMACIÓN EXTRAÍDA Y ANALIZADA DEL MANUAL DE MARCA:
-${manualProfile}
+${finalProfilePiece}
 `.trim();
 
         localStorage.setItem("brandProfile", currentProfile);
 
         chatMessages.push({
           role: "assistant",
-          content: "Perfecto, ya analicé el manual y lo convertí en un perfil de marca optimizado. Ahora puedo usarlo para ayudarte a definir la imagen. ¿Qué pieza querés generar?"
+          content: `Perfecto, ya analicé ${file ? "el manual" : ""}${file && websiteUrl ? " y " : ""}${websiteUrl ? "el sitio web" : ""} y actualicé el perfil de marca. ¿Qué pieza gráfica querés que diseñemos hoy?`
         });
 
         localStorage.setItem("brandChatMessages", JSON.stringify(chatMessages));
 
+        // Limpiar inputs
+        document.getElementById("brandWebsite").value = "";
+        document.getElementById("brandFile").value = "";
+
         renderAll();
 
-        setStatus("✅ Manual analizado correctamente y sumado al perfil");
-        alert("✅ Manual analizado y sumado al perfil");
+        setStatus("✅ Análisis completado y sumado al perfil");
+        alert("✅ Información analizada y sumada al perfil");
 
       } catch (error) {
         console.error(error);
@@ -1529,8 +1564,28 @@ ${manualProfile}
         alert(`Error: ${error.message}`);
       } finally {
         uploadBtn.disabled = false;
-        uploadBtn.textContent = "➕ Analizar manual";
+        uploadBtn.textContent = "➕ Analizar manual / web";
       }
+    }
+
+    async function analyzeWebsiteBrand({ aiConfig, brandName, url }) {
+      const response = await fetch("/api/analyze-website", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          url,
+          brandName,
+          aiConfig
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al analizar el sitio web");
+      }
+      return data;
     }
 
     async function analyzeTextBrand({ aiConfig, brandName, manualText }) {
@@ -2328,6 +2383,9 @@ Visual rules:
       document.getElementById("visibleBrandName").value = "";
       document.getElementById("prompt").value = "";
       document.getElementById("imageText").value = "";
+      if (document.getElementById("brandWebsite")) {
+        document.getElementById("brandWebsite").value = "";
+      }
       document.getElementById("resultDiv").style.display = "none";
       closeCanvasEditor();
 
