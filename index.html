@@ -1065,6 +1065,11 @@
                 />
               </div>
 
+              <div class="field" style="display: flex; align-items: center; gap: 8px; margin-top: -6px; margin-bottom: 16px;">
+                <input type="checkbox" id="useBrandContext" checked style="width: auto; margin: 0; cursor: pointer;" />
+                <label for="useBrandContext" style="margin: 0; font-weight: 700; cursor: pointer; font-size: 12px; color: var(--muted);">Aplicar identidad y manual de la marca</label>
+              </div>
+
               <div class="field">
                 <label>¿Qué imagen necesitás? <small>obligatorio</small></label>
                 <textarea
@@ -2021,6 +2026,7 @@ ${finalProfilePiece}
       const contentType = document.getElementById("contentType").value;
       const imageText = document.getElementById("imageText").value.trim();
       const visibleBrandName = document.getElementById("visibleBrandName").value.trim();
+      const useBrandContext = document.getElementById("useBrandContext").checked;
       const generateBtn = document.getElementById("generateBtn");
 
       if (!brandName) {
@@ -2029,7 +2035,7 @@ ${finalProfilePiece}
         return;
       }
 
-      if (!currentProfile) {
+      if (useBrandContext && !currentProfile) {
         const confirmContinue = confirm("No hay perfil de marca construido. La imagen puede salir menos precisa. ¿Querés generar igual?");
         if (!confirmContinue) {
           goToStep(2);
@@ -2046,14 +2052,18 @@ ${finalProfilePiece}
         generateBtn.disabled = true;
         generateBtn.textContent = "⏳ Generando imagen...";
 
-        const referencesSummary = visualAssets.length > 0
+        const referencesSummary = (useBrandContext && visualAssets.length > 0)
           ? `El usuario cargó ${visualAssets.length} imágenes de referencia. Si el proveedor no soporta imagen de referencia directa, usá este dato solo como contexto.`
           : "No se adjuntaron imágenes de referencia.";
 
-        const brandNameSection = visibleBrandName
+        const brandNameSection = (useBrandContext && visibleBrandName)
           ? `Visible brand name to render in the image (place it naturally on packaging, signs or labels):
 ${visibleBrandName}`
           : `CRITICAL RULE: Do NOT include any brand name text, letters, typography, text overlays, or brand logos in the image scene. Keep the scene clean, organic, and realistic, showing no commercial branding names.`;
+
+        const brandProfileText = useBrandContext
+          ? (currentProfile || "No detailed brand profile. Use the user's request.")
+          : "Ignore all brand guidelines. Generate a completely generic image based ONLY on the user request, with no logos, branding, text overlays, or specific brand colors.";
 
         const systemPrompt = `
 Create a professional advertising image.
@@ -2061,10 +2071,10 @@ Create a professional advertising image.
 ${brandNameSection}
 
 Brand profile:
-${currentProfile || "No detailed brand profile. Use the user's request."}
+${brandProfileText}
 
 Detected type:
-${detectedType}
+${useBrandContext ? detectedType : "no especificado"}
 
 Requested piece:
 ${contentType.replace(/-/g, " ")}
