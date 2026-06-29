@@ -2065,8 +2065,25 @@ ${visibleBrandName}`
           ? (currentProfile || "No detailed brand profile. Use the user's request.")
           : "Ignore all brand guidelines. Generate a completely generic image based ONLY on the user request, with no logos, branding, text overlays, or specific brand colors.";
 
+        const visualRules = useBrandContext
+          ? `- Professional commercial design.
+- Clean composition.
+- High-quality lighting.
+- Modern branding.
+- No watermark.
+- No distorted text.
+- If text appears, it must be short and legible.
+- Respect the brand style, colors, audience and tone.
+- Do not include external brands.
+- Make it suitable for social media advertising.`
+          : `- Clean composition.
+- High-quality lighting.
+- No watermark.
+- No text overlays, logos or branding.
+- Do not include any written characters, signs or text unless explicitly requested.`;
+
         const systemPrompt = `
-Create a professional advertising image.
+${useBrandContext ? "Create a professional advertising image." : "Create a clean, natural photo or illustration."}
 
 ${brandNameSection}
 
@@ -2089,16 +2106,7 @@ Reference context:
 ${referencesSummary}
 
 Visual rules:
-- Professional commercial design.
-- Clean composition.
-- High-quality lighting.
-- Modern branding.
-- No watermark.
-- No distorted text.
-- If text appears, it must be short and legible.
-- Respect the brand style, colors, audience and tone.
-- Do not include external brands.
-- Make it suitable for social media advertising.
+${visualRules}
 `;
 
         const referenceImages = visualAssets

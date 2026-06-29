@@ -264,13 +264,22 @@ function buildShortPrompt(prompt) {
     .replace(/\s+/g, " ")
     .trim();
 
-  const brandProfileMatch = value.match(/Brand profile:(.*?)(Detected type:|Requested piece:|User request:)/i);
   const userRequestMatch = value.match(/User request:(.*?)(Text to include in the image:|Reference context:|Visual rules:)/i);
+  const userRequest = userRequestMatch ? userRequestMatch[1].trim() : value;
+
+  const isGeneric = value.includes("Ignore all brand guidelines");
+
+  if (isGeneric) {
+    return `Create a clean, natural photo or illustration.
+Request: ${userRequest}
+Style: clean composition, high-quality lighting, realistic scene, no watermark, no logos, no branding text, no text overlays, organic scene.`;
+  }
+
+  const brandProfileMatch = value.match(/Brand profile:(.*?)(Detected type:|Requested piece:|User request:)/i);
   const textMatch = value.match(/Text to include in the image:(.*?)(Reference context:|Visual rules:)/i);
   const detectedTypeMatch = value.match(/Detected type:(.*?)(Requested piece:|User request:)/i);
 
   const brandProfile = brandProfileMatch ? brandProfileMatch[1].trim() : "";
-  const userRequest = userRequestMatch ? userRequestMatch[1].trim() : value;
   const imageText = textMatch ? textMatch[1].trim() : "";
   const detectedType = detectedTypeMatch ? detectedTypeMatch[1].trim() : "";
 
