@@ -787,6 +787,7 @@
                 <select id="textProvider" onchange="handleTextProviderChange()">
                   <option value="groq">Groq</option>
                   <option value="gemini">Gemini</option>
+                  <option value="openai">OpenAI</option>
                 </select>
               </div>
 
@@ -807,6 +808,7 @@
                 <select id="imageProvider" onchange="handleImageProviderChange()">
                   <option value="pollinations">Pollinations</option>
                   <option value="gemini">Gemini</option>
+                  <option value="openai">OpenAI</option>
                 </select>
               </div>
 
@@ -1065,6 +1067,15 @@
         ];
       }
 
+      if (provider === "openai") {
+        return [
+          { value: "gpt-4o-mini", label: "gpt-4o-mini (Recomendado)" },
+          { value: "gpt-4o", label: "gpt-4o" },
+          { value: "o1-mini", label: "o1-mini" },
+          { value: "gpt-4-turbo", label: "gpt-4-turbo" }
+        ];
+      }
+
       return [
         { value: "gemini-2.5-flash", label: "gemini-2.5-flash" },
         { value: "gemini-2.5-pro", label: "gemini-2.5-pro" },
@@ -1081,6 +1092,13 @@
           { value: "turbo", label: "turbo" },
           { value: "gptimage", label: "gptimage" },
           { value: "zimage", label: "zimage" }
+        ];
+      }
+
+      if (provider === "openai") {
+        return [
+          { value: "dall-e-3", label: "dall-e-3" },
+          { value: "dall-e-2", label: "dall-e-2" }
         ];
       }
 
@@ -1125,6 +1143,8 @@
 
       if (provider === "pollinations") {
         imageApiKeyInput.placeholder = "Opcional para Pollinations";
+      } else if (provider === "openai") {
+        imageApiKeyInput.placeholder = "OpenAI requiere API Key";
       } else {
         imageApiKeyInput.placeholder = "Gemini requiere API Key";
       }
@@ -1175,7 +1195,7 @@
       };
 
       if (!config.textApiKey) {
-        alert("Pegá una API Key de texto primero. Para tu caso, la API Key de Groq.");
+        alert("Pegá una API Key de texto primero.");
         return false;
       }
 

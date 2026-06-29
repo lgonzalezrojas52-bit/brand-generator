@@ -140,6 +140,12 @@ Resumen de máximo 900 caracteres con lo esencial.
         model,
         prompt
       });
+    } else if (provider === "openai") {
+      result = await callOpenAIText({
+        apiKey,
+        model,
+        prompt
+      });
     } else {
       return res.status(400).json({
         error: `Proveedor de texto no soportado: ${provider}`
@@ -240,3 +246,37 @@ async function callGeminiText({ apiKey, model, prompt }) {
 
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
+
+async function callOpenAIText({ apiKey, model, prompt }) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Sos un especialista senior en branding. Respondé en español, en texto plano, claro y ordenado."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.35,
+      max_tokens: 1800
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Error en OpenAI");
+  }
+
+  return data?.choices?.[0]?.message?.content || "";
+}
+

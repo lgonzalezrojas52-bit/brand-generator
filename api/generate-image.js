@@ -44,6 +44,17 @@ export default async function handler(req, res) {
       });
     }
 
+    if (imageProvider === "openai") {
+      return await generateWithOpenAI({
+        res,
+        prompt,
+        model: imageModel,
+        apiKey: imageApiKey,
+        width,
+        height
+      });
+    }
+
     return res.status(400).json({
       error: `Proveedor de imagen no soportado todavía: ${imageProvider}`
     });
@@ -387,3 +398,84 @@ async function generateWithGemini({
     model
   });
 }
+
+async function generateWithOpenAI({
+  res,
+  prompt,
+  model,
+  apiKey,
+  width,
+  height
+}) {
+  if (!apiKey) {
+    return res.status(400).json({
+      error: "Falta la API Key de OpenAI para generar imagen"
+    });
+  }
+
+  // DALL-E 3 supports 1024x1024, 1024x1792 (vertical), and 1792x1024 (horizontal)
+  let size = "1024x1024";
+
+  const w = Number(width || 1024);
+  const h = Number(height || 1024);
+
+  if (w > h) {
+    size = "1792x1024"; // Landscape
+  } else if (h > w) {
+    size = "1024x1792"; // Portrait
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model || "dall-e-3",
+        prompt,
+        n: 1,
+        size,
+        response_format: "b64_json"
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data.error?.message || "Error en OpenAI (DALL-E)",
+        provider: "openai",
+        model: model || "dall-e-3",
+        raw: data
+      });
+    }
+
+    const image = data?.data?.[0]?.b64_json;
+    const revisedPrompt = data?.data?.[0]?.revised_prompt || "";
+
+    if (!image) {
+      return res.status(500).json({
+        error: "OpenAI respondió, pero no devolvió los datos de la imagen",
+        provider: "openai",
+        model: model || "dall-e-3",
+        raw: data
+      });
+    }
+
+    return res.status(200).json({
+      text: revisedPrompt ? `Prompt revisado por DALL-E: ${revisedPrompt}` : "Imagen generada correctamente con DALL-E.",
+      image,
+      mimeType: "image/png",
+      provider: "openai",
+      model: model || "dall-e-3"
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+}
+

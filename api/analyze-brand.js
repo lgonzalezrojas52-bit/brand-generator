@@ -34,9 +34,9 @@ export default async function handler(req, res) {
     });
   }
 
-  if (provider !== "gemini") {
+  if (provider !== "gemini" && provider !== "openai") {
     return res.status(400).json({
-      error: "Por ahora el análisis de manual solo soporta Gemini. Después sumamos OpenAI."
+      error: "Por ahora el análisis visual de manual solo soporta Gemini y OpenAI."
     });
   }
 
@@ -127,35 +127,58 @@ Devolvé el perfil con esta estructura:
       });
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${finalApiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts
-            }
-          ]
-        })
+    let brandProfile = "";
+
+    if (provider === "gemini") {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${textModel}:generateContent?key=${finalApiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          error: data.error?.message || "Error analizando el manual de marca",
+          provider,
+          model: textModel,
+          raw: data
+        });
       }
-    );
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "Error analizando el manual de marca",
-        provider,
-        model: textModel,
-        raw: data
+      brandProfile = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    } else if (provider === "openai") {
+      try {
+        brandProfile = await callOpenAIVision({
+          apiKey: finalApiKey,
+          model: textModel,
+          prompt,
+          pages
+        });
+      } catch (err) {
+        return res.status(500).json({
+          error: err.message,
+          provider,
+          model: textModel
+        });
+      }
+    } else {
+      return res.status(400).json({
+        error: `Proveedor no soportado: ${provider}`
       });
     }
-
-    const brandProfile = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!brandProfile) {
       return res.status(500).json({
@@ -178,3 +201,53 @@ Devolvé el perfil con esta estructura:
     });
   }
 }
+
+async function callOpenAIVision({ apiKey, model, prompt, pages }) {
+  const messages = [
+    {
+      role: "system",
+      content: "Sos un director creativo senior y especialista en branding. Analizás manuales de marca a partir de imágenes."
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: prompt
+        }
+      ]
+    }
+  ];
+
+  for (const page of pages) {
+    if (!page || !page.data) continue;
+    messages[1].content.push({
+      type: "image_url",
+      image_url: {
+        url: `data:${page.mimeType || "image/jpeg"};base64,${page.data}`
+      }
+    });
+  }
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model || "gpt-4o-mini",
+      messages,
+      max_tokens: 2500
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Error en OpenAI Vision");
+  }
+
+  return data?.choices?.[0]?.message?.content || "";
+}
+

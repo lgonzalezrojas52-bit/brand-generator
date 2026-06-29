@@ -144,6 +144,12 @@ No agregues texto fuera del JSON.
         model: textModel,
         prompt
       });
+    } else if (provider === "openai") {
+      rawText = await callOpenAIText({
+        apiKey: finalApiKey,
+        model: textModel,
+        prompt
+      });
     } else {
       return res.status(400).json({
         error: `Proveedor no soportado todavía: ${provider}`
@@ -335,3 +341,40 @@ async function callGroqText({ apiKey, model, prompt }) {
 
   return data?.choices?.[0]?.message?.content || "";
 }
+
+async function callOpenAIText({ apiKey, model, prompt }) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Respondé únicamente JSON válido. No uses markdown. No agregues explicación fuera del JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.35,
+      max_tokens: 850,
+      response_format: {
+        type: "json_object"
+      }
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Error en OpenAI");
+  }
+
+  return data?.choices?.[0]?.message?.content || "";
+}
+
