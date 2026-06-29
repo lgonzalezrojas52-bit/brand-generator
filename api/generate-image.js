@@ -267,12 +267,12 @@ function buildShortPrompt(prompt) {
   const userRequestMatch = value.match(/User request:(.*?)(Text to include in the image:|Reference context:|Visual rules:)/i);
   const userRequest = userRequestMatch ? userRequestMatch[1].trim() : value;
 
-  const isGeneric = value.includes("Ignore all brand guidelines");
+  const noBrandText = value.includes("Do NOT include any brand name text") || value.includes("no logos");
 
-  if (isGeneric) {
-    return `Create a clean, natural photo or illustration.
+  if (noBrandText) {
+    return `Create a professional advertising image.
 Request: ${userRequest}
-Style: clean composition, high-quality lighting, realistic scene, no watermark, no logos, no branding text, no text overlays, organic scene.`;
+Style: clean composition, high-quality lighting, no logos, no branding text, no trademarks, respect general colors but keep all packaging and objects completely generic and unbranded, no watermark.`;
   }
 
   const brandProfileMatch = value.match(/Brand profile:(.*?)(Detected type:|Requested piece:|User request:)/i);

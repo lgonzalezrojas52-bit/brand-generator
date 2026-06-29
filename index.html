@@ -2026,7 +2026,6 @@ ${finalProfilePiece}
       const contentType = document.getElementById("contentType").value;
       const imageText = document.getElementById("imageText").value.trim();
       const visibleBrandName = document.getElementById("visibleBrandName").value.trim();
-      const useBrandContext = document.getElementById("useBrandContext").checked;
       const generateBtn = document.getElementById("generateBtn");
 
       if (!brandName) {
@@ -2035,7 +2034,7 @@ ${finalProfilePiece}
         return;
       }
 
-      if (useBrandContext && !currentProfile) {
+      if (!currentProfile) {
         const confirmContinue = confirm("No hay perfil de marca construido. La imagen puede salir menos precisa. ¿Querés generar igual?");
         if (!confirmContinue) {
           goToStep(2);
@@ -2052,20 +2051,18 @@ ${finalProfilePiece}
         generateBtn.disabled = true;
         generateBtn.textContent = "⏳ Generando imagen...";
 
-        const referencesSummary = (useBrandContext && visualAssets.length > 0)
+        const referencesSummary = visualAssets.length > 0
           ? `El usuario cargó ${visualAssets.length} imágenes de referencia. Si el proveedor no soporta imagen de referencia directa, usá este dato solo como contexto.`
           : "No se adjuntaron imágenes de referencia.";
 
-        const brandNameSection = (useBrandContext && visibleBrandName)
+        const brandNameSection = visibleBrandName
           ? `Visible brand name to render in the image (place it naturally on packaging, signs or labels):
 ${visibleBrandName}`
           : `CRITICAL RULE: Do NOT include any brand name text, letters, typography, text overlays, or brand logos in the image scene. Keep the scene clean, organic, and realistic, showing no commercial branding names.`;
 
-        const brandProfileText = useBrandContext
-          ? (currentProfile || "No detailed brand profile. Use the user's request.")
-          : "Ignore all brand guidelines. Generate a completely generic image based ONLY on the user request, with no logos, branding, text overlays, or specific brand colors.";
+        const brandProfileText = currentProfile || "No detailed brand profile. Use the user's request.";
 
-        const visualRules = useBrandContext
+        const visualRules = visibleBrandName
           ? `- Professional commercial design.
 - Clean composition.
 - High-quality lighting.
@@ -2079,11 +2076,12 @@ ${visibleBrandName}`
           : `- Clean composition.
 - High-quality lighting.
 - No watermark.
-- No text overlays, logos or branding.
+- No brand logos, emblems, signatures or trademarks.
+- Respect the general brand style, colors, audience and tone, but keep all objects completely generic and unbranded.
 - Do not include any written characters, signs or text unless explicitly requested.`;
 
         const systemPrompt = `
-${useBrandContext ? "Create a professional advertising image." : "Create a clean, natural photo or illustration."}
+Create a professional advertising image.
 
 ${brandNameSection}
 
@@ -2091,7 +2089,7 @@ Brand profile:
 ${brandProfileText}
 
 Detected type:
-${useBrandContext ? detectedType : "no especificado"}
+${detectedType}
 
 Requested piece:
 ${contentType.replace(/-/g, " ")}
