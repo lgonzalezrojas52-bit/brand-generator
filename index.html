@@ -10,22 +10,22 @@
 
   <style>
     :root {
-      --bg: #fff1f2;
-      --card: rgba(255, 255, 255, 0.76);
-      --line: rgba(236, 72, 153, 0.12);
-      --line-2: rgba(236, 72, 153, 0.24);
-      --text: #311042;
-      --muted: rgba(49, 16, 66, 0.64);
-      --muted-2: rgba(49, 16, 66, 0.42);
-      --blue: #d946ef;
-      --cyan: #f472b6;
-      --violet: #86198f;
-      --green: #10b981;
-      --orange: #f59e0b;
-      --red: #ef4444;
-      --radius-xl: 18px;
-      --shadow: 0 16px 48px rgba(236, 72, 153, 0.06), 0 4px 12px rgba(236, 72, 153, 0.03);
-      --blur: blur(20px);
+      --bg: #faf9f6;
+      --card: #ffffff;
+      --line: #e4e4e7;
+      --line-2: #a1a1aa;
+      --text: #18181b;
+      --muted: #52525b;
+      --muted-2: #71717a;
+      --blue: #18181b;
+      --cyan: #3f3f46;
+      --violet: #09090b;
+      --green: #15803d;
+      --orange: #b45309;
+      --red: #be123c;
+      --radius-xl: 8px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --blur: none;
     }
 
     * {
@@ -41,26 +41,13 @@
     body {
       min-height: 100vh;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(217, 70, 239, 0.06), transparent 35%),
-        radial-gradient(circle at top right, rgba(244, 114, 182, 0.05), transparent 35%),
-        radial-gradient(circle at 50% 100%, rgba(253, 244, 255, 0.8), transparent 30%),
-        var(--bg);
+      background: var(--bg);
       color: var(--text);
       overflow-x: hidden;
     }
 
     body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(236, 72, 153, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(236, 72, 153, 0.035) 1px, transparent 1px);
-      background-size: 42px 42px;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.45), transparent 85%);
-      pointer-events: none;
-      z-index: 0;
+      display: none;
     }
 
     .app {
@@ -78,11 +65,10 @@
       justify-content: space-between;
       gap: 16px;
       margin-bottom: 24px;
-      padding: 12px 14px;
+      padding: 12px 16px;
       border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.72);
-      backdrop-filter: var(--blur);
+      border-radius: var(--radius-xl);
+      background: #ffffff;
       box-shadow: var(--shadow);
     }
 
@@ -94,13 +80,12 @@
     }
 
     .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--cyan), var(--blue) 48%, var(--violet));
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      background: var(--blue);
       display: grid;
       place-items: center;
-      box-shadow: 0 8px 24px rgba(217, 70, 239, 0.2);
       flex: 0 0 auto;
       font-weight: 900;
       color: white;
@@ -124,13 +109,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 13px;
-      border-radius: 999px;
-      background: rgba(16, 185, 129, 0.08);
-      color: #047857;
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      font-size: 12px;
-      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 4px;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      font-size: 11px;
+      font-weight: 700;
       white-space: nowrap;
     }
 
@@ -139,13 +124,9 @@
       overflow: hidden;
       border: 1px solid var(--line);
       border-radius: var(--radius-xl);
-      padding: clamp(28px, 5vw, 54px);
+      padding: clamp(24px, 4vw, 42px);
       margin-bottom: 22px;
-      background:
-        linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65)),
-        radial-gradient(circle at 12% 20%, rgba(217, 70, 239, 0.07), transparent 35%),
-        radial-gradient(circle at 90% 18%, rgba(244, 114, 182, 0.05), transparent 30%);
-      backdrop-filter: var(--blur);
+      background: #ffffff;
       box-shadow: var(--shadow);
     }
 
@@ -153,39 +134,37 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(217, 70, 239, 0.08);
-      border: 1px solid rgba(217, 70, 239, 0.18);
-      color: var(--blue);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 0.08em;
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: #f4f4f5;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
 
     .hero h1 {
       max-width: 900px;
-      font-size: clamp(38px, 6vw, 72px);
-      line-height: 0.94;
-      letter-spacing: -0.075em;
-      font-weight: 950;
+      font-size: clamp(32px, 5vw, 64px);
+      line-height: 1.0;
+      letter-spacing: -0.05em;
+      font-weight: 900;
       margin-bottom: 18px;
+      color: var(--text);
     }
 
     .hero h1 span {
-      background: linear-gradient(135deg, #8b5cf6, #d946ef 48%, #f472b6);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: var(--text);
     }
 
     .hero p {
       max-width: 720px;
       color: var(--muted);
-      font-size: clamp(15px, 2vw, 18px);
-      line-height: 1.6;
+      font-size: clamp(14px, 1.8vw, 16px);
+      line-height: 1.55;
     }
 
     .stepper {
@@ -196,45 +175,43 @@
     }
 
     .step-pill {
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.45);
+      padding: 12px 14px;
+      border-radius: 6px;
+      background: #ffffff;
       border: 1px solid var(--line);
       color: var(--muted);
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: 0.15s ease;
     }
 
     .step-pill:hover {
-      transform: translateY(-1px);
       border-color: var(--line-2);
-      background: rgba(255,255,255,0.7);
+      background: #fafafa;
     }
 
     .step-pill.active {
-      color: var(--blue);
-      border-color: rgba(217, 70, 239, 0.35);
-      background:
-        linear-gradient(135deg, rgba(217, 70, 239, 0.06), rgba(134, 25, 143, 0.02)),
-        rgba(255,255,255,0.74);
-      box-shadow: 0 12px 30px rgba(217, 70, 239, 0.04);
+      color: white;
+      border-color: var(--blue);
+      background: var(--blue);
+      box-shadow: none;
     }
 
     .step-number {
-      width: 30px;
-      height: 30px;
-      border-radius: 9px;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
       display: grid;
       place-items: center;
-      font-weight: 950;
-      background: rgba(217, 70, 239, 0.08);
-      color: var(--blue);
-      margin-bottom: 10px;
+      font-weight: 800;
+      background: #f4f4f5;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-size: 11px;
     }
 
     .step-pill.active .step-number {
-      background: linear-gradient(135deg, var(--blue), var(--violet));
-      color: white;
+      background: white;
+      color: var(--blue);
     }
 
     .step-name {
@@ -337,27 +314,27 @@
     textarea,
     select {
       width: 100%;
-      padding: 14px 15px;
-      border-radius: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
       font: inherit;
       color: var(--text);
-      background: rgba(255, 255, 255, 0.65);
-      border: 1px solid var(--line);
+      background: #ffffff;
+      border: 1px solid var(--line-2);
       outline: none;
-      transition: 0.2s ease;
+      transition: border-color 0.15s ease;
     }
 
     input::placeholder,
     textarea::placeholder {
-      color: rgba(30, 27, 75, 0.35);
+      color: var(--muted-2);
     }
 
     input:focus,
     textarea:focus,
     select:focus {
-      border-color: rgba(217, 70, 239, 0.45);
-      box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.08);
-      background: rgba(255,255,255,0.95);
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.08);
+      background: #ffffff;
     }
 
     textarea {
@@ -369,8 +346,8 @@
     select {
       appearance: none;
       background-image:
-        linear-gradient(45deg, transparent 50%, rgba(49, 16, 66, 0.6) 50%),
-        linear-gradient(135deg, rgba(49, 16, 66, 0.6) 50%, transparent 50%);
+        linear-gradient(45deg, transparent 50%, rgba(113, 113, 122, 0.6) 50%),
+        linear-gradient(135deg, rgba(113, 113, 122, 0.6) 50%, transparent 50%);
       background-position:
         calc(100% - 20px) calc(50% - 3px),
         calc(100% - 14px) calc(50% - 3px);
@@ -380,53 +357,51 @@
 
     input[type="file"] {
       cursor: pointer;
-      padding: 12px;
+      padding: 10px;
     }
 
     input[type="file"]::file-selector-button {
-      border: 0;
+      border: 1px solid var(--line-2);
       margin-right: 12px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      background: rgba(217, 70, 239, 0.08);
-      color: var(--blue);
-      font-weight: 850;
+      padding: 8px 12px;
+      border-radius: 4px;
+      background: #f4f4f5;
+      color: var(--text);
+      font-weight: 700;
       cursor: pointer;
     }
 
     .hint {
-      margin-top: -5px;
+      margin-top: 5px;
       margin-bottom: 14px;
-      color: var(--muted-2);
+      color: var(--muted);
       font-size: 12px;
       line-height: 1.5;
     }
 
     button {
       width: 100%;
-      border: 0;
-      border-radius: 10px;
-      padding: 14px 16px;
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      padding: 12px 16px;
       cursor: pointer;
       color: white;
-      font-weight: 950;
+      font-weight: 700;
       font-size: 14px;
-      letter-spacing: -0.01em;
-      background: linear-gradient(135deg, var(--blue), var(--violet));
-      box-shadow: 0 12px 28px rgba(217, 70, 239, 0.16);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      background: var(--blue);
+      box-shadow: var(--shadow);
+      transition: background 0.15s ease, opacity 0.15s ease;
     }
 
     button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 16px 36px rgba(217, 70, 239, 0.24);
+      background: #27272a;
+      box-shadow: var(--shadow);
     }
 
     button:disabled {
       opacity: 0.48;
       cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      background: var(--blue);
     }
 
     .btn-row {
@@ -442,50 +417,49 @@
     }
 
     .btn-secondary {
-      background: rgba(217, 70, 239, 0.04);
-      border: 1px solid var(--line);
-      color: var(--blue);
+      background: #ffffff;
+      border: 1px solid var(--line-2);
+      color: var(--text);
       box-shadow: none;
     }
 
     .btn-secondary:hover {
-      background: rgba(217, 70, 239, 0.08);
-      color: var(--violet);
+      background: #f4f4f5;
+      color: var(--text);
     }
 
     .btn-danger {
-      background: rgba(239, 68, 68, 0.06);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: #ef4444;
+      background: #ffffff;
+      border: 1px solid #fda4af;
+      color: #be123c;
       box-shadow: none;
     }
 
     .btn-danger:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background: #ffe4e6;
+      color: #9f1239;
     }
 
     .status {
       display: none;
       margin-top: 14px;
-      padding: 14px 15px;
-      border-radius: 10px;
-      background: rgba(245, 158, 11, 0.08);
-      border: 1px solid rgba(245, 158, 11, 0.24);
-      color: #b45309;
-      font-size: 13px;
-      line-height: 1.45;
-      font-weight: 700;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 600;
     }
 
     .profile-box {
       display: none;
       margin-top: 16px;
-      padding: 15px;
+      padding: 12px;
       max-height: 360px;
       overflow-y: auto;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.65);
+      border-radius: 6px;
+      background: #fafafa;
       border: 1px solid var(--line);
       color: var(--text);
       white-space: pre-wrap;
@@ -496,9 +470,9 @@
     .chat-box {
       height: 390px;
       overflow-y: auto;
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.45);
+      padding: 12px;
+      border-radius: 6px;
+      background: #fafafa;
       border: 1px solid var(--line);
       margin-bottom: 14px;
     }
@@ -506,8 +480,8 @@
     .msg {
       max-width: 86%;
       margin-bottom: 12px;
-      padding: 12px 13px;
-      border-radius: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
       line-height: 1.45;
       font-size: 14px;
       white-space: pre-wrap;
@@ -515,27 +489,27 @@
 
     .msg.user {
       margin-left: auto;
-      background: linear-gradient(135deg, var(--blue), var(--violet));
+      background: var(--blue);
       color: white;
-      border-bottom-right-radius: 3px;
+      border-bottom-right-radius: 2px;
     }
 
     .msg.assistant {
       margin-right: auto;
-      background: rgba(255, 255, 255, 0.9);
+      background: #ffffff;
       border: 1px solid var(--line);
       color: var(--text);
-      border-bottom-left-radius: 3px;
-      box-shadow: 0 4px 12px rgba(217, 70, 239, 0.03);
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
 
     .asset-request-box {
       display: none;
       margin-top: 14px;
-      padding: 14px;
-      border-radius: 14px;
-      background: rgba(217, 70, 239, 0.04);
-      border: 1px solid rgba(217, 70, 239, 0.18);
+      padding: 12px;
+      border-radius: 6px;
+      background: #fafafa;
+      border: 1px solid var(--line);
     }
 
     .asset-request-title {
@@ -569,10 +543,10 @@
 
     .asset-preview {
       position: relative;
-      border-radius: 12px;
+      border-radius: 6px;
       overflow: hidden;
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.85);
+      background: #ffffff;
       aspect-ratio: 1 / 1;
     }
 
@@ -628,12 +602,9 @@
     .result {
       display: none;
       margin-top: 22px;
-      border: 1px solid rgba(217, 70, 239, 0.22);
+      border: 1px solid var(--line-2);
       border-radius: var(--radius-xl);
-      background:
-        linear-gradient(135deg, rgba(217, 70, 239, 0.05), rgba(255,255,255,0.45)),
-        rgba(255,255,255,0.74);
-      backdrop-filter: var(--blur);
+      background: #ffffff;
       box-shadow: var(--shadow);
       overflow: hidden;
     }
@@ -649,10 +620,10 @@
     }
 
     .result-title {
-      color: var(--violet);
-      font-weight: 950;
-      font-size: 20px;
-      letter-spacing: -0.04em;
+      color: var(--text);
+      font-weight: 850;
+      font-size: 18px;
+      letter-spacing: -0.02em;
     }
 
     .result-buttons {
@@ -671,11 +642,11 @@
     }
 
     .result-text {
-      background: rgba(255, 255, 255, 0.65);
+      background: #fafafa;
       border: 1px solid var(--line);
       color: var(--text);
-      padding: 16px;
-      border-radius: 14px;
+      padding: 14px;
+      border-radius: 6px;
       margin-bottom: 18px;
       white-space: pre-wrap;
       font-size: 13px;
@@ -683,9 +654,9 @@
     }
 
     .image-wrap {
-      background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+      background: #ffffff;
       border: 1px solid var(--line);
-      border-radius: 22px;
+      border-radius: 8px;
       padding: 14px;
       text-align: center;
       overflow: hidden;
@@ -696,10 +667,10 @@
     .image-wrap img {
       width: 100%;
       max-width: 420px;
-      border-radius: 18px;
+      border-radius: 6px;
       display: block;
       margin: 0 auto;
-      box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+      border: 1px solid var(--line);
     }
 
     .editor-layout {
@@ -1156,19 +1127,19 @@
           
           <!-- Vista del Editor Canvas (inicialmente oculto) -->
           <div id="canvasEditorWrap" style="display: none; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px;">
-            <h4 style="font-size: 14px; font-weight: 900; color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em;">🎨 Personalizá tu Pieza Gráfica (Arrastrá el logo para acomodarlo)</h4>
+            <h4 style="font-size: 14px; font-weight: 850; color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em;">🎨 Personalizá tu Pieza Gráfica (Arrastrá el logo para acomodarlo)</h4>
             
             <div class="editor-layout">
               <!-- El canvas interactivo -->
-              <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: flex; justify-content: center; overflow: hidden; width: 100%;">
-                <canvas id="editorCanvas" style="max-width: 420px; width: 100%; height: auto; border-radius: 10px; cursor: move; background: #000; box-shadow: 0 12px 36px rgba(0,0,0,0.4);"></canvas>
+              <div style="background: #faf9f6; border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: flex; justify-content: center; overflow: hidden; width: 100%;">
+                <canvas id="editorCanvas" style="max-width: 420px; width: 100%; height: auto; border-radius: 4px; cursor: move; background: #faf9f6; border: 1px solid var(--line);"></canvas>
               </div>
               
               <!-- Controles del editor -->
-              <div style="display: flex; flex-direction: column; gap: 14px; background: rgba(255,255,255,0.025); border: 1px solid var(--line); padding: 16px; border-radius: 18px; text-align: left;">
+              <div style="display: flex; flex-direction: column; gap: 14px; background: #ffffff; border: 1px solid var(--line); padding: 16px; border-radius: 6px; text-align: left;">
                 <div class="field">
                   <label>1. Seleccioná el Logo/Asset</label>
-                  <div id="editorAssetSelector" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; max-height: 110px; overflow-y: auto; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,0.14); align-items: center;">
+                  <div id="editorAssetSelector" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; max-height: 110px; overflow-y: auto; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: #fafafa; align-items: center;">
                     <!-- Se llenará con los assets -->
                   </div>
                   <input type="file" id="editorLogoUpload" accept="image/*" onchange="handleEditorLogoUpload()" style="display: none;" />
@@ -1176,27 +1147,27 @@
                 
                 <div class="field">
                   <label>2. Escala del Logo: <span id="logoSizeLabel">20%</span></label>
-                  <input type="range" id="logoScaleRange" min="5" max="80" value="20" oninput="updateLogoEditor()" />
+                  <input type="range" id="logoScaleRange" min="5" max="80" value="20" oninput="updateLogoEditor()" style="width: 100%; accent-color: var(--blue);" />
                 </div>
                 
                 <div class="field">
                   <label>3. Opacidad: <span id="logoOpacityLabel">100%</span></label>
-                  <input type="range" id="logoOpacityRange" min="10" max="100" value="100" oninput="updateLogoEditor()" />
+                  <input type="range" id="logoOpacityRange" min="10" max="100" value="100" oninput="updateLogoEditor()" style="width: 100%; accent-color: var(--blue);" />
                 </div>
                 
                 <div class="field">
                   <label>4. Ajuste Rápido de Posición</label>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0;" onclick="setLogoPresetPosition('top-left')">Arriba Izq</button>
-                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0;" onclick="setLogoPresetPosition('top-right')">Arriba Der</button>
-                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0;" onclick="setLogoPresetPosition('bottom-left')">Abajo Izq</button>
-                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0;" onclick="setLogoPresetPosition('bottom-right')">Abajo Der</button>
+                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0; border-radius: 4px;" onclick="setLogoPresetPosition('top-left')">Arriba Izq</button>
+                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0; border-radius: 4px;" onclick="setLogoPresetPosition('top-right')">Arriba Der</button>
+                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0; border-radius: 4px;" onclick="setLogoPresetPosition('bottom-left')">Abajo Izq</button>
+                    <button class="btn-secondary" style="padding: 8px; font-size: 11px; min-width: 0; border-radius: 4px;" onclick="setLogoPresetPosition('bottom-right')">Abajo Der</button>
                   </div>
                 </div>
 
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                  <button onclick="downloadEditorImage()" style="background: linear-gradient(135deg, var(--green), #15803d); box-shadow: 0 10px 24px rgba(34, 197, 94, 0.25);">📥 Descargar con Logo</button>
-                  <button class="btn-secondary" style="padding: 10px; min-width: 0;" onclick="closeCanvasEditor()">Cancelar</button>
+                  <button onclick="downloadEditorImage()" style="background: var(--green); border-color: var(--green); color: white;">📥 Descargar con Logo</button>
+                  <button class="btn-secondary" style="padding: 10px; min-width: 0; border-radius: 4px;" onclick="closeCanvasEditor()">Cancelar</button>
                 </div>
               </div>
             </div>
