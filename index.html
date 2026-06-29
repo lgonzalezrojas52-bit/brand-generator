@@ -1114,6 +1114,7 @@
 
         <div class="result-buttons">
           <button class="btn-secondary" onclick="copyResult()">📋 Copiar descripción</button>
+          <button class="btn-secondary" onclick="useResultAsReference()">🔄 Usar como referencia (Iterar)</button>
           <button class="btn-secondary" id="btnOpenEditor" onclick="openCanvasEditor()">🎨 Superponer Logo</button>
           <button onclick="downloadImage()">📥 Descargar original</button>
         </div>
@@ -2175,6 +2176,39 @@ ${visualRules}
 
       navigator.clipboard.writeText(lastResult);
       alert("✅ Descripción copiada");
+    }
+
+    function useResultAsReference() {
+      if (!lastImageUrl || !lastMimeType) {
+        alert("Todavía no hay imagen para usar como referencia");
+        return;
+      }
+
+      if (visualAssets.length >= MAX_REFERENCE_IMAGES_TO_SEND) {
+        alert(`No puedes tener más de ${MAX_REFERENCE_IMAGES_TO_SEND} imágenes de referencia. Elimina alguna primero.`);
+        return;
+      }
+
+      const base64 = lastImageUrl.split(",")[1];
+      
+      visualAssets.push({
+        mimeType: lastMimeType,
+        name: "Iteración_Anterior.png",
+        data: base64
+      });
+
+      localStorage.setItem("visualAssets", JSON.stringify(visualAssets));
+      renderAssetPreviews();
+      
+      const promptInput = document.getElementById("prompt");
+      if (!promptInput.value.startsWith("Modificar la imagen anterior:")) {
+        promptInput.value = "Modificar la imagen anterior: " + promptInput.value;
+      }
+
+      window.scrollTo({
+        top: document.getElementById("step2").offsetTop - 80,
+        behavior: "smooth"
+      });
     }
 
     function downloadImage() {
