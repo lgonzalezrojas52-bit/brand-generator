@@ -2020,7 +2020,7 @@ ${finalProfilePiece}
       const userPrompt = document.getElementById("prompt").value.trim();
       const contentType = document.getElementById("contentType").value;
       const imageText = document.getElementById("imageText").value.trim();
-      const visibleBrandName = document.getElementById("visibleBrandName").value.trim() || brandName;
+      const visibleBrandName = document.getElementById("visibleBrandName").value.trim();
       const generateBtn = document.getElementById("generateBtn");
 
       if (!brandName) {
@@ -2050,11 +2050,15 @@ ${finalProfilePiece}
           ? `El usuario cargó ${visualAssets.length} imágenes de referencia. Si el proveedor no soporta imagen de referencia directa, usá este dato solo como contexto.`
           : "No se adjuntaron imágenes de referencia.";
 
+        const brandNameSection = visibleBrandName
+          ? `Visible brand name to render in the image (place it naturally on packaging, signs or labels):
+${visibleBrandName}`
+          : `CRITICAL RULE: Do NOT include any brand name text, letters, typography, text overlays, or brand logos in the image scene. Keep the scene clean, organic, and realistic, showing no commercial branding names.`;
+
         const systemPrompt = `
 Create a professional advertising image.
 
-Visible brand name:
-${visibleBrandName}
+${brandNameSection}
 
 Brand profile:
 ${currentProfile || "No detailed brand profile. Use the user's request."}
