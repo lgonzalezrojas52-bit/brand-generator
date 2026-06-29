@@ -967,8 +967,23 @@
 
             <div class="panel-body">
               <div class="field">
-                <label>Nombre de la marca <small>obligatorio</small></label>
-                <input type="text" id="brandName" placeholder="Ej: Overtake, Boing Agency, Medic-GO" />
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label style="margin-bottom: 0;">Nombre de la marca <small>obligatorio</small></label>
+                  
+                  <!-- Biblioteca de Marcas -->
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <select id="savedBrandsSelect" onchange="loadSavedBrand(this.value)" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; width: auto; background: rgba(255,255,255,0.75); max-width: 160px; height: auto; border: 1px solid var(--line); color: var(--text);">
+                      <option value="">-- Cargar Marca --</option>
+                    </select>
+                    <button id="btnDeleteBrand" onclick="deleteBrandFromLibrary()" class="btn-secondary" style="display: none; padding: 4px 6px; font-size: 11px; width: auto; border-radius: 6px; min-width: 0; height: auto; box-shadow: none; border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">🗑️</button>
+                    <button onclick="createNewBrand()" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; width: auto; border-radius: 6px; min-width: 0; height: auto; box-shadow: none;">➕ Nueva</button>
+                  </div>
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="brandName" placeholder="Ej: Overtake, Boing Agency, Medic-GO" style="flex: 1;" />
+                  <button onclick="saveCurrentBrandToLibrary()" class="btn-secondary" style="width: auto; padding: 12px 14px; font-size: 13px; border-radius: 10px; min-width: 0; background: linear-gradient(135deg, var(--blue), var(--violet)); color: white; white-space: nowrap;">💾 Guardar</button>
+                </div>
               </div>
 
               <div class="field">
@@ -1452,6 +1467,7 @@
       renderAssetRequests();
       renderAssetPreviews();
       renderPills();
+      renderSavedBrandsSelector();
     }
 
     function renderProfile() {
@@ -1888,6 +1904,7 @@ ${finalProfilePiece}
         localStorage.setItem("readyToGenerate", String(readyToGenerate));
         localStorage.setItem("assetRequests", JSON.stringify(assetRequests));
 
+        autoSaveActiveBrand();
         renderAll();
 
       } catch (error) {
@@ -1943,6 +1960,7 @@ ${finalProfilePiece}
       }
 
       localStorage.setItem("visualAssets", JSON.stringify(visualAssets));
+      autoSaveActiveBrand();
       document.getElementById("visualAssetFiles").value = "";
       renderAssetPreviews();
     }
@@ -1950,6 +1968,7 @@ ${finalProfilePiece}
     function removeVisualAsset(index) {
       visualAssets.splice(index, 1);
       localStorage.setItem("visualAssets", JSON.stringify(visualAssets));
+      autoSaveActiveBrand();
       renderAssetPreviews();
     }
 
@@ -2471,17 +2490,124 @@ Visual rules:
       document.getElementById("btnOpenEditor").style.display = "inline-block";
     }
 
-    function clearProjectData() {
-      if (!confirm("¿Borrar perfil, chat e imágenes cargadas de este navegador?")) return;
+    // BIBLIOTECA DE MULTI-MARCAS (LOCAL STORAGE)
+    let activeBrandId = localStorage.getItem("activeBrandId") || null;
 
+    function renderSavedBrandsSelector() {
+      const select = document.getElementById("savedBrandsSelect");
+      if (!select) return;
+
+      const savedBrands = JSON.parse(localStorage.getItem("savedBrands") || "[]");
+      const activeBrandId = localStorage.getItem("activeBrandId") || "";
+
+      select.innerHTML = '<option value="">-- Cargar Marca --</option>';
+
+      savedBrands.forEach((brand) => {
+        const option = document.createElement("option");
+        option.value = brand.id;
+        option.textContent = brand.brandName;
+        select.appendChild(option);
+      });
+
+      select.value = activeBrandId;
+
+      const btnDelete = document.getElementById("btnDeleteBrand");
+      if (btnDelete) {
+        btnDelete.style.display = activeBrandId ? "inline-block" : "none";
+      }
+    }
+
+    function saveCurrentBrandToLibrary() {
+      const brandNameInput = document.getElementById("brandName");
+      const brandName = brandNameInput.value.trim();
+
+      if (!brandName) {
+        alert("Escribí el nombre de la marca primero para poder guardarla");
+        return;
+      }
+
+      if (!activeBrandId) {
+        activeBrandId = "brand-" + Date.now();
+        localStorage.setItem("activeBrandId", activeBrandId);
+      }
+
+      saveBrandName();
+
+      const savedBrands = JSON.parse(localStorage.getItem("savedBrands") || "[]");
+      
+      const brandData = {
+        id: activeBrandId,
+        brandName: brandName,
+        brandProfile: localStorage.getItem("brandProfile") || "",
+        brandChatMessages: JSON.parse(localStorage.getItem("brandChatMessages") || "[]"),
+        visualAssets: JSON.parse(localStorage.getItem("visualAssets") || "[]"),
+        detectedType: localStorage.getItem("detectedType") || "no especificado",
+        readyToGenerate: localStorage.getItem("readyToGenerate") === "true",
+        assetRequests: JSON.parse(localStorage.getItem("assetRequests") || "[]")
+      };
+
+      const existingIndex = savedBrands.findIndex(b => b.id === activeBrandId);
+      if (existingIndex !== -1) {
+        savedBrands[existingIndex] = brandData;
+      } else {
+        savedBrands.push(brandData);
+      }
+
+      localStorage.setItem("savedBrands", JSON.stringify(savedBrands));
+      
+      renderAll();
+      alert(`✅ Marca "${brandName}" guardada en la biblioteca`);
+    }
+
+    function loadSavedBrand(brandId) {
+      if (!brandId) return;
+
+      const savedBrands = JSON.parse(localStorage.getItem("savedBrands") || "[]");
+      const brand = savedBrands.find(b => b.id === brandId);
+
+      if (!brand) {
+        alert("Marca no encontrada");
+        return;
+      }
+
+      activeBrandId = brand.id;
+      localStorage.setItem("activeBrandId", brand.id);
+      localStorage.setItem("brandName", brand.brandName);
+      localStorage.setItem("brandProfile", brand.brandProfile);
+      localStorage.setItem("brandChatMessages", JSON.stringify(brand.brandChatMessages));
+      localStorage.setItem("visualAssets", JSON.stringify(brand.visualAssets));
+      localStorage.setItem("detectedType", brand.detectedType);
+      localStorage.setItem("readyToGenerate", String(brand.readyToGenerate));
+      localStorage.setItem("assetRequests", JSON.stringify(brand.assetRequests));
+
+      currentProfile = brand.brandProfile;
+      chatMessages = brand.brandChatMessages;
+      visualAssets = brand.visualAssets;
+      detectedType = brand.detectedType;
+      readyToGenerate = brand.readyToGenerate;
+      assetRequests = brand.assetRequests;
+
+      document.getElementById("brandName").value = brand.brandName;
+      document.getElementById("visibleBrandName").value = brand.brandName;
+      if (document.getElementById("brandWebsite")) {
+        document.getElementById("brandWebsite").value = "";
+      }
+
+      renderAll();
+      alert(`✅ Cargada la marca: "${brand.brandName}"`);
+    }
+
+    function createNewBrand() {
+      activeBrandId = null;
+      localStorage.removeItem("activeBrandId");
+
+      localStorage.removeItem("brandName");
       localStorage.removeItem("brandProfile");
       localStorage.removeItem("brandChatMessages");
       localStorage.removeItem("visualAssets");
       localStorage.removeItem("detectedType");
       localStorage.removeItem("readyToGenerate");
       localStorage.removeItem("assetRequests");
-      localStorage.removeItem("brandName");
-      localStorage.removeItem("currentStep");
 
       currentProfile = "";
       chatMessages = [];
@@ -2492,18 +2618,66 @@ Visual rules:
 
       document.getElementById("brandName").value = "";
       document.getElementById("visibleBrandName").value = "";
+      document.getElementById("chatInput").value = "";
       document.getElementById("prompt").value = "";
       document.getElementById("imageText").value = "";
       if (document.getElementById("brandWebsite")) {
         document.getElementById("brandWebsite").value = "";
       }
-      document.getElementById("resultDiv").style.display = "none";
-      closeCanvasEditor();
 
       renderAll();
-      goToStep(1);
+      alert("✨ Workspace limpio. Escribí el nombre de la nueva marca y hacé clic en Guardar.");
+    }
 
-      alert("✅ Datos del proyecto borrados");
+    function deleteBrandFromLibrary() {
+      if (!activeBrandId) return;
+
+      const savedBrands = JSON.parse(localStorage.getItem("savedBrands") || "[]");
+      const brand = savedBrands.find(b => b.id === activeBrandId);
+
+      if (!brand) return;
+
+      if (!confirm(`¿Seguro que querés eliminar la marca "${brand.brandName}" de tu biblioteca?`)) {
+        return;
+      }
+
+      const updatedBrands = savedBrands.filter(b => b.id !== activeBrandId);
+      localStorage.setItem("savedBrands", JSON.stringify(updatedBrands));
+
+      createNewBrand();
+      alert("🗑️ Marca eliminada de la biblioteca");
+    }
+
+    function autoSaveActiveBrand() {
+      if (activeBrandId && document.getElementById("brandName").value.trim()) {
+        const savedBrands = JSON.parse(localStorage.getItem("savedBrands") || "[]");
+        const existingIndex = savedBrands.findIndex(b => b.id === activeBrandId);
+        
+        if (existingIndex !== -1) {
+          const brandData = {
+            id: activeBrandId,
+            brandName: document.getElementById("brandName").value.trim(),
+            brandProfile: localStorage.getItem("brandProfile") || "",
+            brandChatMessages: JSON.parse(localStorage.getItem("brandChatMessages") || "[]"),
+            visualAssets: JSON.parse(localStorage.getItem("visualAssets") || "[]"),
+            detectedType: localStorage.getItem("detectedType") || "no especificado",
+            readyToGenerate: localStorage.getItem("readyToGenerate") === "true",
+            assetRequests: JSON.parse(localStorage.getItem("assetRequests") || "[]")
+          };
+
+          savedBrands[existingIndex] = brandData;
+          localStorage.setItem("savedBrands", JSON.stringify(savedBrands));
+        }
+      }
+    }
+
+    function clearProjectData() {
+      if (!confirm("¿Borrar perfil, chat e imágenes cargadas de este navegador?")) return;
+
+      localStorage.removeItem("savedBrands");
+      createNewBrand();
+
+      alert("✅ Todos los datos de marcas borrados de la biblioteca");
     }
 
     function setStep2MobileTab(tab) {
