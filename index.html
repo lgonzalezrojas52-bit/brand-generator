@@ -1201,7 +1201,7 @@
     const MAX_PDF_PAGES = 10;
     const PDF_RENDER_SCALE = 1.35;
     const PDF_IMAGE_QUALITY = 0.78;
-    const MAX_ASSET_SIZE = 1400;
+    const MAX_ASSET_SIZE = 800; // Reducido para evitar el límite de 4.5MB en Vercel
     const MAX_REFERENCE_IMAGES_TO_SEND = 6;
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -2155,7 +2155,12 @@ ${visualRules}
         });
 
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        console.error("Error en generateContent:", error);
+        if (error.message.includes("Failed to fetch")) {
+          alert(`Error de conexión (Timeout o Bloqueador de Anuncios): La solicitud tardó demasiado o fue bloqueada por tu navegador. Intenta desactivar tu AdBlocker o probar de nuevo.`);
+        } else {
+          alert(`Error: ${error.message}`);
+        }
       } finally {
         generateBtn.disabled = false;
         generateBtn.textContent = "🎨 Generar imagen";
