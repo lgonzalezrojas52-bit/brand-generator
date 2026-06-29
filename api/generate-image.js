@@ -447,8 +447,7 @@ async function generateWithOpenAI({
         model: model || "dall-e-3",
         prompt,
         n: 1,
-        size,
-        response_format: "b64_json"
+        size
       })
     });
 
@@ -463,24 +462,50 @@ async function generateWithOpenAI({
       });
     }
 
-    const image = data?.data?.[0]?.b64_json;
+    const imageB64 = data?.data?.[0]?.b64_json;
+    const imageUrl = data?.data?.[0]?.url;
     const revisedPrompt = data?.data?.[0]?.revised_prompt || "";
 
-    if (!image) {
-      return res.status(500).json({
-        error: "OpenAI respondió, pero no devolvió los datos de la imagen",
+    if (imageB64) {
+      return res.status(200).json({
+        text: revisedPrompt ? `Prompt revisado por DALL-E: ${revisedPrompt}` : "Imagen generada correctamente con DALL-E.",
+        image: imageB64,
+        mimeType: "image/png",
         provider: "openai",
-        model: model || "dall-e-3",
-        raw: data
+        model: model || "dall-e-3"
       });
     }
 
-    return res.status(200).json({
-      text: revisedPrompt ? `Prompt revisado por DALL-E: ${revisedPrompt}` : "Imagen generada correctamente con DALL-E.",
-      image,
-      mimeType: "image/png",
+    if (imageUrl) {
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        return res.status(500).json({
+          error: "OpenAI devolvió URL, pero no se pudo descargar la imagen",
+          provider: "openai",
+          model: model || "dall-e-3",
+          raw: data
+        });
+      }
+
+      const contentType = imageResponse.headers.get("content-type") || "image/png";
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64Image = buffer.toString("base64");
+
+      return res.status(200).json({
+        text: revisedPrompt ? `Prompt revisado por DALL-E: ${revisedPrompt}` : "Imagen generada correctamente con DALL-E.",
+        image: base64Image,
+        mimeType: contentType,
+        provider: "openai",
+        model: model || "dall-e-3"
+      });
+    }
+
+    return res.status(500).json({
+      error: "OpenAI respondió, pero no devolvió los datos de la imagen",
       provider: "openai",
-      model: model || "dall-e-3"
+      model: model || "dall-e-3",
+      raw: data
     });
 
   } catch (error) {
