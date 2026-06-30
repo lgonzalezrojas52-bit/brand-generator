@@ -271,12 +271,6 @@ function buildShortPrompt(prompt) {
 
   const noBrandText = value.includes("Do NOT include any brand name text") || value.includes("no logos");
 
-  if (noBrandText) {
-    return `Create a professional advertising image.
-Request: ${userRequest}
-Style: clean composition, high-quality lighting, no logos, no branding text, no trademarks, respect general colors but keep all packaging and objects completely generic and unbranded, no watermark.`;
-  }
-
   const brandProfileMatch = value.match(/Brand profile:(.*?)(Detected type:|Requested piece:|User request:)/i);
   const textMatch = value.match(/Text to include in the image:(.*?)(Reference context:|Visual rules:)/i);
   const detectedTypeMatch = value.match(/Detected type:(.*?)(Requested piece:|User request:)/i);
@@ -284,6 +278,13 @@ Style: clean composition, high-quality lighting, no logos, no branding text, no 
   const brandProfile = brandProfileMatch ? brandProfileMatch[1].trim() : "";
   const imageText = textMatch ? textMatch[1].trim() : "";
   const detectedType = detectedTypeMatch ? detectedTypeMatch[1].trim() : "";
+
+  if (noBrandText) {
+    return `Create a professional advertising image.
+Request: ${userRequest}
+Brand context (use these colors and style, but NO logos): ${brandProfile}
+Style: clean composition, high-quality lighting, no logos, no branding text, no trademarks, respect general colors but keep all packaging and objects completely generic and unbranded, no watermark.`.slice(0, 1800);
+  }
 
   const shortPrompt = `
 Professional advertising image for a brand.
